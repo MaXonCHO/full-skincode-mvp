@@ -51,5 +51,5 @@ def load_csv_to_database(csv_file_path):
 
 
 if __name__ == "__main__":
-    csv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'results — копия 2.csv')
+    csv_path = os.path.join(os.path.dirname(__file__), 'products.csv')
     load_csv_to_database(csv_path)

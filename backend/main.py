@@ -60,7 +60,7 @@ def init_db_endpoint():
 def load_csv_endpoint():
     """Загружает данные из CSV файла в базу данных."""
     try:
-        csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results — копия 2.csv')
+        csv_path = os.path.join(os.path.dirname(__file__), 'products.csv')
         load_csv_to_database(csv_path)
         return {"status": "success", "message": "CSV data loaded to database"}
     except Exception as e:

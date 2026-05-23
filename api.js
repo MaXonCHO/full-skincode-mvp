@@ -1,6 +1,8 @@
 // API клиент для SkinCode backend
 const API_BASE_URL = (typeof window !== 'undefined' && window.SKINCODE_API_URL)
-    || 'https://full-skincode-mvp-production.up.railway.app';
+    || (typeof window !== 'undefined' && window.location && window.location.protocol === 'file:'
+        ? 'http://localhost:8000'
+        : '/api');
 
 class SkinCodeAPI {
     constructor(baseUrl = API_BASE_URL) {
@@ -49,9 +51,7 @@ class SkinCodeAPI {
         return this.request('/users/', {
             method: 'POST',
             body: JSON.stringify({
-                anonymous_id: anonymousId,
-                undertone: undertone,
-                skin_type: skinType
+                anonymous_id: anonymousId
             })
         });
     }

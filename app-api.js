@@ -551,15 +551,12 @@ async function findMatches() {
 // Генерация результатов
 async function generateResults() {
     try {
-        // Обновляем данные пользователя на backend
-        await api.updateUser(state.userId, state.undertone, state.skinType);
-        
         // Получаем рекомендации от backend
         const productIds = state.products.map(p => p.id);
         const recommendations = await api.getRecommendations(
             state.userId,
-            state.undertone,
-            state.skinType,
+            null,
+            null,
             productIds
         );
         

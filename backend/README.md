@@ -83,10 +83,10 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 Recommendation engine использует collaborative filtering и co-occurrence analysis:
 
 1. **Co-occurrence analysis**: анализирует какие продукты часто используют вместе похожие пользователи
-2. **User similarity**: находит пользователей с похожими продуктами и характеристиками кожи
+2. **User similarity**: находит пользователей с похожими продуктами
 3. **Weighted scoring**: финальный score рассчитывается по формуле:
    ```
-   score = (co_occurrence_count * 1.0) + (undertone_match * 40.0) + (skin_type_match * 30.0)
+   score = (co_occurrence_count * 1.0) + similarity_bonus
    ```
 
 ## Database Schema

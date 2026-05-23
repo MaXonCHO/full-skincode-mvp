@@ -1,6 +1,6 @@
 # SkinCode MVP - Сервис подбора тональных средств
 
-Production-ready MVP для beauty-tech проекта SkinCode. Сервис подбора аналогов тональных средств на основе collaborative filtering и co-occurrence analysis.
+Production-ready MVP для beauty-tech проекта SkinCode. Сервис сбора пользовательских тональных средств и подбора похожих продуктов на основе collaborative filtering и co-occurrence analysis.
 
 ## 🚀 Быстрый старт
 
@@ -17,8 +17,8 @@ cd "фул скинкод 2"
 # Запустите все сервисы
 docker-compose up --build
 
-# API будет доступен по адресу: http://localhost:8000
-# Frontend: откройте index.html в браузере
+# Frontend: http://localhost:8080
+# API будет доступен через reverse proxy: http://localhost:8080/api
 # API Documentation: http://localhost:8000/docs
 ```
 
@@ -111,7 +111,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 3. **Candidate Generation**: собирает кандидатов для рекомендаций
 4. **Weighted Scoring**: считает финальный score
    ```
-   score = (co_occurrence_count * 1.0) + (undertone_match * 40.0) + (skin_type_match * 30.0)
+   score = (co_occurrence_count * 1.0) + similarity_bonus
    ```
 5. **Ranking**: сортирует и возвращает топ-5
 

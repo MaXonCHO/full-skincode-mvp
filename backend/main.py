@@ -203,6 +203,10 @@ def delete_user_product_endpoint(user_id: int, product_id: int, db: Session = De
     success = delete_user_product(db, user_id, product_id)
     if not success:
         raise HTTPException(status_code=404, detail="User product not found")
+    try:
+        RecommendationEngine(db).update_co_occurrence_matrix()
+    except Exception:
+        pass
     return {"message": "Product removed successfully"}
 
 
@@ -272,31 +276,27 @@ def get_recommendations_endpoint(request: RecommendationRequest, db: Session = D
     user = get_user(db, request.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
-    # Обновляем данные пользователя если переданы
-    if request.undertone or request.skin_type:
-        user = update_user(db, request.user_id, request.undertone, request.skin_type)
-    
+
     # Добавляем продукты пользователю
     for product_id in request.product_ids:
         add_user_product(db, request.user_id, product_id)
     
     # Генерируем рекомендации
     engine = RecommendationEngine(db)
-    recommendations_data = engine.generate_recommendations(
-        user_id=request.user_id,
-        undertone=request.undertone or user.undertone,
-        skin_type=request.skin_type or user.skin_type,
-        product_ids=request.product_ids,
-        top_k=5
-    )
-    
-    # Сохраняем рекомендации и обновляем co-occurrence graph
-    engine.save_recommendations(request.user_id, recommendations_data)
     try:
         engine.update_co_occurrence_matrix()
     except Exception:
         pass
+    recommendations_data = engine.generate_recommendations(
+        user_id=request.user_id,
+        undertone=None,
+        skin_type=None,
+        product_ids=request.product_ids,
+        top_k=5
+    )
+    
+    # Сохраняем рекомендации
+    engine.save_recommendations(request.user_id, recommendations_data)
     
     # Формируем ответ
     recommendations = []

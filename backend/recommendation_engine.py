@@ -1,13 +1,15 @@
+from typing import Dict, List, Optional, Sequence
+
+from sqlalchemy import func, text
 from sqlalchemy.orm import Session
-from sqlalchemy import text
-from models import User, Product, UserProduct, ProductCoOccurrence, Recommendation
-from typing import List, Dict, Optional
+
+from models import Product, ProductCoOccurrence, Recommendation, UserProduct
 
 
 class RecommendationEngine:
     """
-    Recommendation engine для SkinCode.
-    Collaborative filtering + co-occurrence + weighted scoring.
+    Recommendation engine for SkinCode.
+    Collaborative filtering and co-occurrence only.
     """
 
     CO_OCCURRENCE_WEIGHT = 1.0
@@ -20,26 +22,28 @@ class RecommendationEngine:
     def generate_recommendations(
         self,
         user_id: int,
-        undertone: str,
-        skin_type: str,
+        undertone: Optional[str],
+        skin_type: Optional[str],
         product_ids: List[int],
         top_k: int = 5,
     ) -> List[Dict]:
-        if not product_ids:
+        selected_product_ids = list(dict.fromkeys(product_ids))
+        if not selected_product_ids:
             return []
 
-        similar_user_ids = self._find_similar_users(product_ids, user_id)
-        candidate_product_ids = self._get_candidate_products(product_ids, similar_user_ids)
+        similar_users = self._find_similar_users(selected_product_ids, exclude_user_id=user_id)
+        candidate_product_ids = self._get_candidate_products(
+            selected_product_ids,
+            similar_users,
+        )
 
-        if not similar_user_ids or not candidate_product_ids:
+        if not candidate_product_ids:
             return []
 
         scored_products = self._score_products(
             candidate_product_ids,
-            product_ids,
-            undertone,
-            skin_type,
-            similar_user_ids,
+            selected_product_ids,
+            similar_users,
         )
 
         ranked = sorted(scored_products, key=lambda x: x["score"], reverse=True)
@@ -49,134 +53,184 @@ class RecommendationEngine:
         self,
         product_ids: List[int],
         exclude_user_id: Optional[int] = None,
-    ) -> List[int]:
-        """Пользователи с хотя бы одним общим продуктом (без жёсткого фильтра по коже)."""
-        query = self.db.query(UserProduct.user_id).filter(
-            UserProduct.product_id.in_(product_ids)
+    ) -> List[Dict]:
+        """
+        Возвращает похожих пользователей только по overlap выбранных продуктов.
+        """
+        base_query = (
+            self.db.query(
+                UserProduct.user_id,
+                func.count(func.distinct(UserProduct.product_id)).label("shared_count"),
+            )
+            .filter(UserProduct.product_id.in_(product_ids))
+            .group_by(UserProduct.user_id)
         )
         if exclude_user_id is not None:
-            query = query.filter(UserProduct.user_id != exclude_user_id)
+            base_query = base_query.filter(UserProduct.user_id != exclude_user_id)
 
-        return list({row[0] for row in query.distinct().all()})
+        rows = base_query.all()
+        if not rows:
+            return []
+
+        user_product_counts = {
+            row[0]: row[1]
+            for row in self.db.query(
+                UserProduct.user_id,
+                func.count(UserProduct.id).label("total_count"),
+            )
+            .filter(UserProduct.user_id.in_(user_ids))
+            .group_by(UserProduct.user_id)
+            .all()
+        }
+
+        similar_users: List[Dict] = []
+
+        for user_id_value, shared_count in rows:
+            other_count = max(user_product_counts.get(user_id_value, 0), 1)
+            similarity_score = (shared_count / max(len(set(product_ids)), 1)) * 100.0
+            similarity_score += (shared_count / other_count) * 25.0
+
+            if similarity_score <= 0:
+                continue
+
+            similar_users.append(
+                {
+                    "user_id": user_id_value,
+                    "shared_count": int(shared_count),
+                    "similarity_score": similarity_score,
+                }
+            )
+
+        similar_users.sort(key=lambda item: item["similarity_score"], reverse=True)
+        return similar_users
 
     def _get_candidate_products(
         self,
         user_product_ids: List[int],
-        similar_user_ids: List[int],
+        similar_users: List[Dict],
     ) -> List[int]:
-        if not similar_user_ids:
-            return []
+        candidates = set()
 
-        rows = (
-            self.db.query(UserProduct.product_id)
-            .filter(
-                UserProduct.user_id.in_(similar_user_ids),
-                ~UserProduct.product_id.in_(user_product_ids),
+        similar_user_ids = [user["user_id"] for user in similar_users]
+        if similar_user_ids:
+            rows = (
+                self.db.query(UserProduct.product_id)
+                .filter(
+                    UserProduct.user_id.in_(similar_user_ids),
+                    ~UserProduct.product_id.in_(user_product_ids),
+                )
+                .distinct()
+                .all()
             )
-            .distinct()
-            .all()
-        )
-        return [row[0] for row in rows]
+            candidates.update(row[0] for row in rows)
+
+        # Подстраховка: если похожих пользователей мало, используем матрицу co-occurrence
+        for product_id in user_product_ids:
+            rows = (
+                self.db.query(
+                    ProductCoOccurrence.product_a_id,
+                    ProductCoOccurrence.product_b_id,
+                )
+                .filter(
+                    (ProductCoOccurrence.product_a_id == product_id)
+                    | (ProductCoOccurrence.product_b_id == product_id)
+                )
+                .all()
+            )
+            for product_a_id, product_b_id in rows:
+                candidate_id = product_b_id if product_a_id == product_id else product_a_id
+                if candidate_id not in user_product_ids:
+                    candidates.add(candidate_id)
+
+        return list(candidates)
 
     def _score_products(
         self,
         candidate_product_ids: List[int],
         user_product_ids: List[int],
-        undertone: str,
-        skin_type: str,
-        similar_user_ids: List[int],
+        similar_users: List[Dict],
     ) -> List[Dict]:
         scored_products = []
+        similar_user_ids = [user["user_id"] for user in similar_users]
 
         for product_id in candidate_product_ids:
             product = self.db.query(Product).filter(Product.id == product_id).first()
             if not product:
                 continue
 
-            co_count = self._co_occurrence_count(product_id, similar_user_ids)
-            undertone_match = self._match_flag_from_similar_users(
-                product_id, similar_user_ids, "undertone", undertone
-            )
-            skin_match = self._match_flag_from_similar_users(
-                product_id, similar_user_ids, "skin_type", skin_type
-            )
-
-            product_undertone_bonus = self._product_undertone_bonus(product, undertone)
-
-            total_score = (
-                co_count * self.CO_OCCURRENCE_WEIGHT
-                + undertone_match * self.UNDERTONE_MATCH_WEIGHT
-                + skin_match * self.SKIN_TYPE_MATCH_WEIGHT
-                + product_undertone_bonus * self.UNDERTONE_MATCH_WEIGHT * 0.25
-            )
+            co_count = self._co_occurrence_score(product_id, user_product_ids)
+            similarity_bonus = self._candidate_support_bonus(product_id, similar_user_ids)
+            total_score = co_count * self.CO_OCCURRENCE_WEIGHT + similarity_bonus
 
             scored_products.append(
                 {
                     "product_id": product_id,
                     "score": total_score,
                     "co_occurrence_score": float(co_count),
-                    "undertone_match_score": float(undertone_match + product_undertone_bonus * 0.25),
-                    "skin_type_match_score": float(skin_match),
+                    "undertone_match_score": 0.0,
+                    "skin_type_match_score": 0.0,
                 }
             )
 
         return scored_products
 
-    def _co_occurrence_count(self, product_id: int, similar_user_ids: List[int]) -> int:
+    def _co_occurrence_score(self, product_id: int, selected_product_ids: Sequence[int]) -> float:
+        if not selected_product_ids:
+            return 0.0
+
+        score = 0.0
+        for selected_product_id in selected_product_ids:
+            if selected_product_id == product_id:
+                continue
+            pair_count = self._get_pair_co_occurrence_count(product_id, selected_product_id)
+            if pair_count:
+                score += float(pair_count)
+
+        # Если матрица пустая, fallback на live overlap по пользователям.
+        if score == 0.0:
+            for selected_product_id in selected_product_ids:
+                shared_count = (
+                    self.db.query(UserProduct.user_id)
+                    .filter(
+                        UserProduct.product_id.in_([product_id, selected_product_id]),
+                    )
+                    .group_by(UserProduct.user_id)
+                    .having(func.count(UserProduct.product_id) == 2)
+                    .count()
+                )
+                score += float(shared_count)
+
+        return score
+
+    def _get_pair_co_occurrence_count(self, product_a_id: int, product_b_id: int) -> int:
+        left_id, right_id = sorted((product_a_id, product_b_id))
+        record = (
+            self.db.query(ProductCoOccurrence)
+            .filter(
+                ProductCoOccurrence.product_a_id == left_id,
+                ProductCoOccurrence.product_b_id == right_id,
+            )
+            .first()
+        )
+        return record.co_occurrence_count if record else 0
+
+    def _candidate_support_bonus(self, product_id: int, similar_user_ids: List[int]) -> float:
         if not similar_user_ids:
-            return 0
-        return (
-            self.db.query(UserProduct)
+            return 0.0
+
+        support_count = (
+            self.db.query(UserProduct.user_id)
             .filter(
                 UserProduct.product_id == product_id,
                 UserProduct.user_id.in_(similar_user_ids),
             )
+            .group_by(UserProduct.user_id)
             .count()
         )
-
-    def _match_flag_from_similar_users(
-        self,
-        product_id: int,
-        similar_user_ids: List[int],
-        field: str,
-        target_value: Optional[str],
-    ) -> float:
-        """1.0 если среди похожих пользователей с этим продуктом есть совпадение по полю."""
-        if not target_value or not similar_user_ids:
-            return 0.0
-
-        user_ids_with_product = [
-            row[0]
-            for row in self.db.query(UserProduct.user_id)
-            .filter(
-                UserProduct.product_id == product_id,
-                UserProduct.user_id.in_(similar_user_ids),
-            )
-            .all()
-        ]
-        if not user_ids_with_product:
-            return 0.0
-
-        users = (
-            self.db.query(User)
-            .filter(User.id.in_(user_ids_with_product))
-            .all()
-        )
-
-        for user in users:
-            value = getattr(user, field, None)
-            if value and value == target_value:
-                return 1.0
-        return 0.0
-
-    def _product_undertone_bonus(self, product: Product, user_undertone: Optional[str]) -> float:
-        if not user_undertone or not product.category:
-            return 0.0
-        parts = product.category.split("_")
-        product_undertone = parts[-1] if parts else None
-        return 1.0 if product_undertone == user_undertone else 0.0
+        return float(support_count)
 
     def update_co_occurrence_matrix(self) -> None:
+        self.db.query(ProductCoOccurrence).delete()
         results = self.db.execute(
             text(
                 """

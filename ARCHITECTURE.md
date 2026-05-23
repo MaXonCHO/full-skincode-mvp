@@ -157,8 +157,7 @@ CREATE TABLE recommendations (
 4. **Scoring**
    ```
    score = (co_occurrence_count * 1.0)
-         + (undertone_match * 40.0)
-         + (skin_type_match * 30.0)
+         + similarity_bonus
    ```
 
 5. **Ranking**

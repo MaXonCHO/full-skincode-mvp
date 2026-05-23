@@ -29,8 +29,8 @@ def load_csv_to_database(csv_file_path):
                 product = Product(
                     brand=row.get('brand', ''),
                     line=row.get('name', ''),  # Используем name как линейку
-                    shade=row.get('shade_name', ''),
-                    hex=row.get('shade_value', '') or '#FFFFFF',  # Заглушка если нет hex
+                    shade=row.get('shade_value', ''),  # Используем shade_value как оттенок
+                    hex=row.get('shade_value', '') or '#FFFFFF',  # Используем shade_value как hex
                     image_url='assets/example.png',  # Заглушка для изображений
                     product_url=row.get('product_url', ''),
                     price=float(row.get('price_actual', 0)) if row.get('price_actual') else 0,

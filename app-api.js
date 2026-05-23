@@ -41,6 +41,7 @@ const elements = {
     productsList: document.getElementById('products-list'),
     productCount: document.getElementById('product-count'),
     resultsGrid: document.getElementById('results-grid'),
+    btnDownload: document.getElementById('btn-download'),
     btnRestart: document.getElementById('btn-restart'),
     menuBtn: document.getElementById('menu-btn'),
     menuModal: document.getElementById('menu-modal'),
@@ -208,9 +209,17 @@ function setupEventListeners() {
     // Этап 2: найти мэтчи
     if (elements.btnFind) elements.btnFind.addEventListener('click', findMatches);
 
+    // Кнопки "Назад"
+    if (elements.btnBack1_5) elements.btnBack1_5.addEventListener('click', () => goToStep(1));
+    if (elements.btnBack2) elements.btnBack2.addEventListener('click', () => goToStep(1.5));
+    if (elements.btnBack4) elements.btnBack4.addEventListener('click', () => goToStep(2));
+
+    // Этап 4: скачать подборку
+    if (elements.btnDownload) elements.btnDownload.addEventListener('click', downloadRecommendations);
+
     // Этап 4: начать заново
     if (elements.btnRestart) elements.btnRestart.addEventListener('click', resetApp);
-    
+
     console.log('Обработчики событий настроены');
 }
 

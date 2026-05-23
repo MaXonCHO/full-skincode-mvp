@@ -90,7 +90,7 @@
             <div class="glass-card wide">
                 <!-- Прогресс бар со стрелкой назад -->
                 <div class="progress-header">
-                    <button class="btn-back-arrow" id="btn-back-1-5" onclick="document.getElementById('menu-btn').style.display='block'; document.getElementById('step-1-5').classList.remove('active'); document.getElementById('step-1-5').style.display='none'; document.getElementById('step-1').classList.add('active'); document.getElementById('step-1').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">←</button>
+                    <button class="btn-back-arrow" id="btn-back-1-5">←</button>
                     <div class="progress-bar">
                         <div class="progress-step active">1</div>
                         <div class="progress-line"></div>
@@ -108,25 +108,25 @@
                 <div class="form-group">
                     <label class="label">Подтон кожи</label>
                     <div class="options-grid undertone visual">
-                        <button class="option-btn photo-card" data-value="warm" data-type="undertone" onclick="document.querySelectorAll('[data-type=undertone]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                        <button class="option-btn photo-card" data-value="warm" data-type="undertone">
                             <div class="photo-wrapper">
                                 <img src="assets/warm-tone.png" alt="Теплый">
                                 <span class="photo-label">Теплый</span>
                             </div>
                         </button>
-                        <button class="option-btn photo-card" data-value="neutral" data-type="undertone" onclick="document.querySelectorAll('[data-type=undertone]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                        <button class="option-btn photo-card" data-value="neutral" data-type="undertone">
                             <div class="photo-wrapper">
                                 <img src="assets/neutral-tone.png" alt="Натуральный">
                                 <span class="photo-label">Натуральный</span>
                             </div>
                         </button>
-                        <button class="option-btn photo-card" data-value="cool" data-type="undertone" onclick="document.querySelectorAll('[data-type=undertone]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                        <button class="option-btn photo-card" data-value="cool" data-type="undertone">
                             <div class="photo-wrapper">
                                 <img src="assets/cool-tone.png" alt="Холодный">
                                 <span class="photo-label">Холодный</span>
                             </div>
                         </button>
-                        <button class="option-btn photo-card" data-value="olive" data-type="undertone" onclick="document.querySelectorAll('[data-type=undertone]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                        <button class="option-btn photo-card" data-value="olive" data-type="undertone">
                             <div class="photo-wrapper">
                                 <img src="assets/olive-tone.png" alt="Оливковый">
                                 <span class="photo-label">Оливковый</span>
@@ -138,25 +138,25 @@
                 <div class="form-group">
                     <label class="label">Тип кожи</label>
                     <div class="options-grid skin-type visual">
-                        <button class="option-btn photo-card" data-value="dry" data-type="skin" onclick="document.querySelectorAll('[data-type=skin]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                        <button class="option-btn photo-card" data-value="dry" data-type="skin">
                             <div class="photo-wrapper">
                                 <img src="assets/dry-skin.png" alt="Сухая">
                                 <span class="photo-label">Сухая</span>
                             </div>
                         </button>
-                        <button class="option-btn photo-card" data-value="oily" data-type="skin" onclick="document.querySelectorAll('[data-type=skin]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                        <button class="option-btn photo-card" data-value="oily" data-type="skin">
                             <div class="photo-wrapper">
                                 <img src="assets/oily-skin.png" alt="Жирная">
                                 <span class="photo-label">Жирная</span>
                             </div>
                         </button>
-                        <button class="option-btn photo-card" data-value="combination" data-type="skin" onclick="document.querySelectorAll('[data-type=skin]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                        <button class="option-btn photo-card" data-value="combination" data-type="skin">
                             <div class="photo-wrapper">
                                 <img src="assets/combination-skin.png" alt="Комбинированная">
                                 <span class="photo-label">Комбинированная</span>
                             </div>
                         </button>
-                        <button class="option-btn photo-card" data-value="normal" data-type="skin" onclick="document.querySelectorAll('[data-type=skin]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                        <button class="option-btn photo-card" data-value="normal" data-type="skin">
                             <div class="photo-wrapper">
                                 <img src="assets/normal-skin.png" alt="Нормальная">
                                 <span class="photo-label">Нормальная</span>
@@ -165,7 +165,7 @@
                     </div>
                 </div>
 
-                <button class="btn-outline" id="btn-step-1-5" disabled onclick="document.getElementById('menu-btn').style.display='none'; document.getElementById('step-1-5').classList.remove('active'); document.getElementById('step-1-5').style.display='none'; document.getElementById('step-2').classList.add('active'); document.getElementById('step-2').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">Продолжить</button>
+                <button class="btn-outline" id="btn-step-1-5" disabled>Продолжить</button>
             </div>
         </section>
 
@@ -174,7 +174,7 @@
             <div class="glass-card wide">
                 <!-- Прогресс бар со стрелкой назад -->
                 <div class="progress-header">
-                    <button class="btn-back-arrow" id="btn-back-2" onclick="document.getElementById('menu-btn').style.display='none'; document.getElementById('step-2').classList.remove('active'); document.getElementById('step-2').style.display='none'; document.getElementById('step-1-5').classList.add('active'); document.getElementById('step-1-5').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">←</button>
+                    <button class="btn-back-arrow" id="btn-back-2">←</button>
                     <div class="progress-bar">
                         <div class="progress-step completed">1</div>
                         <div class="progress-line active"></div>
@@ -271,7 +271,7 @@
             <div class="glass-card wide">
                 <!-- Прогресс бар со стрелкой назад -->
                 <div class="progress-header">
-                    <button class="btn-back-arrow" id="btn-back-4" onclick="document.getElementById('step-4').classList.remove('active'); document.getElementById('step-4').style.display='none'; document.getElementById('step-2').classList.add('active'); document.getElementById('step-2').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">←</button>
+                    <button class="btn-back-arrow" id="btn-back-4">←</button>
                     <div class="progress-bar">
                         <div class="progress-step completed">1</div>
                         <div class="progress-line active"></div>
@@ -290,8 +290,8 @@
                     <!-- Результаты генерируются JS -->
                 </div>
 
-                <a href="#" onclick="downloadRecommendations(); return false;" style="display: block; text-align: center; margin-top: 24px; color: var(--text-primary); text-decoration: underline; font-size: 14px; opacity: 0.7; transition: opacity 0.3s ease;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">Скачать подборку</a>
-                <button class="btn-outline" id="btn-restart" onclick="location.reload()">Начать заново</button>
+                <a href="#" id="btn-download" style="display: block; text-align: center; margin-top: 24px; color: var(--text-primary); text-decoration: underline; font-size: 14px; opacity: 0.7; transition: opacity 0.3s ease;">Скачать подборку</a>
+                <button class="btn-outline" id="btn-restart">Начать заново</button>
             </div>
         </section>
 

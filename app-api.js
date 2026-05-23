@@ -187,17 +187,6 @@ function setupEventListeners() {
         });
     });
 
-    // Этап 2: каскадные селекторы
-    if (elements.brandSelect) elements.brandSelect.addEventListener('change', onBrandChange);
-    if (elements.lineDropdownBtn) elements.lineDropdownBtn.addEventListener('click', toggleLineDropdown);
-    if (elements.shadeSelect) elements.shadeSelect.addEventListener('change', onShadeChange);
-
-    // Этап 2: добавить продукт
-    if (elements.btnAdd) elements.btnAdd.addEventListener('click', addProduct);
-
-    // Этап 2: найти мэтчи
-    if (elements.btnFind) elements.btnFind.addEventListener('click', findMatches);
-
     // Этап 4: скачать подборку
     if (elements.btnDownload) elements.btnDownload.addEventListener('click', downloadRecommendations);
 
@@ -250,17 +239,21 @@ function closeMenu() {
 }
 
 // Обновление прогресс-бара
+// 1 = подтон/кожа, 2 = тоналки, 3 = анализ, 4 = результаты
 function getProgressStep(currentStep) {
     if (currentStep === 1) return 0;
-    if (currentStep === 2) return 1;
-    if (currentStep === 3) return 2;
-    if (currentStep === 4) return 3;
-    if (currentStep === 5) return 4;
+    if (currentStep === 1.5) return 1;
+    if (currentStep === 2) return 2;
+    if (currentStep === 3) return 3;
+    if (currentStep === 4) return 4;
     return 0;
 }
 
 function updateProgressBar(currentStep) {
-    const progressBars = document.querySelectorAll('.progress-bar');
+    const activeSection = document.querySelector('.step.active');
+    const progressBars = activeSection
+        ? activeSection.querySelectorAll('.progress-bar')
+        : document.querySelectorAll('.progress-bar');
     const progressStep = getProgressStep(currentStep);
     
     progressBars.forEach(bar => {
@@ -423,38 +416,52 @@ function updateAddButton() {
 async function addProduct() {
     if (state.products.length >= state.maxProducts) return;
 
-    const productId = parseInt(elements.shadeSelect.value);
+    const productId = parseInt(elements.shadeSelect.value, 10);
+    if (!productId) return;
+
     const product = state.allProducts.find(p => p.id === productId);
-    
-    if (!product) return;
-
-    try {
-        // Добавляем продукт на backend
-        await api.addUserProduct(state.userId, productId);
-        
-        const productData = {
-            id: product.id,
-            brand: product.brand,
-            line: product.line,
-            shade: product.shade,
-            hex: product.hex,
-            image: fixProductImage(product.image_url)
-        };
-
-        state.products.push(productData);
-        renderProducts();
-        updateAddButton();
-        updateProductCount();
-        updateFindButton();
-
-        // Сброс селекторов
-        elements.shadeSelect.value = '';
-        updateAddButton();
-        
-        console.log('Продукт добавлен:', productData);
-    } catch (error) {
-        console.error('Ошибка добавления продукта:', error);
+    if (!product) {
+        alert('Каталог ещё загружается. Подожди пару секунд и попробуй снова.');
+        return;
     }
+
+    if (state.products.some(p => p.id === productId)) {
+        alert('Этот продукт уже добавлен.');
+        return;
+    }
+
+    if (state.userId && typeof api !== 'undefined') {
+        try {
+            await api.addUserProduct(state.userId, productId);
+        } catch (error) {
+            console.error('Ошибка добавления продукта на сервер:', error);
+            alert('Не удалось сохранить на сервер. Проверь подключение к API.');
+            return;
+        }
+    }
+
+    state.products.push({
+        id: product.id,
+        brand: product.brand,
+        line: product.line,
+        shade: product.shade,
+        hex: product.hex,
+        image: fixProductImage(product.image_url)
+    });
+
+    renderProducts();
+    updateProductCount();
+    updateFindButton();
+
+    elements.brandSelect.value = '';
+    state.selectedBrand = null;
+    state.selectedLine = null;
+    elements.lineSelectedText.textContent = 'Сначала выбери бренд';
+    elements.lineDropdownBtn.disabled = true;
+    elements.lineDropdownList.innerHTML = '';
+    elements.shadeSelect.disabled = true;
+    elements.shadeSelect.innerHTML = '<option value="">Сначала выбери линейку</option>';
+    updateAddButton();
 }
 
 // Удаление продукта
@@ -706,6 +713,12 @@ async function resetApp() {
 }
 
 window.goToStep = goToStep;
+window.findMatches = findMatches;
+window.addProduct = addProduct;
+window.removeProduct = removeProduct;
+window.onBrandChange = onBrandChange;
+window.onShadeChange = onShadeChange;
+window.selectLine = selectLine;
 window.toggleLineDropdown = toggleLineDropdown;
 window.showHelpModal = showHelpModal;
 window.closeHelpModal = closeHelpModal;

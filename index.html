@@ -203,9 +203,9 @@
                 <div class="progress-header">
                     <button type="button" class="btn-back-arrow" id="btn-back-2" onclick="goToStep(1.5); return false;">←</button>
                     <div class="progress-bar">
-                        <div class="progress-step completed">1</div>
-                        <div class="progress-line active"></div>
-                        <div class="progress-step active">2</div>
+                        <div class="progress-step">1</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">2</div>
                         <div class="progress-line"></div>
                         <div class="progress-step">3</div>
                         <div class="progress-line"></div>
@@ -221,7 +221,7 @@
                     <div class="selectors-panel">
                         <div class="selector-group">
                             <label>Бренд</label>
-                            <select id="brand-select" class="glass-select">
+                            <select id="brand-select" class="glass-select" onchange="onBrandChange()">
                                 <option value="">Выбери бренд</option>
                             </select>
                         </div>
@@ -229,7 +229,7 @@
                         <div class="selector-group">
                             <label>Линейка</label>
                             <div class="native-style-dropdown" id="line-dropdown">
-                                <button type="button" class="native-dropdown-btn" id="line-dropdown-btn" disabled>
+                                <button type="button" class="native-dropdown-btn" id="line-dropdown-btn" disabled onclick="toggleLineDropdown(); return false;">
                                     <span class="selected-text" id="line-selected-text">Сначала выбери бренд</span>
                                     <span class="dropdown-arrow">▼</span>
                                 </button>
@@ -239,12 +239,12 @@
                         
                         <div class="selector-group">
                             <label>Оттенок</label>
-                            <select id="shade-select" class="glass-select" disabled>
+                            <select id="shade-select" class="glass-select" disabled onchange="onShadeChange()">
                                 <option value="">Сначала выбери линейку</option>
                             </select>
                         </div>
 
-                        <button type="button" class="btn-secondary" id="btn-add" disabled>
+                        <button type="button" class="btn-secondary" id="btn-add" disabled onclick="addProduct(); return false;">
                             <span>+</span> Добавить
                         </button>
                         
@@ -262,7 +262,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="btn-outline" id="btn-find" disabled>Найти мои мэтчи</button>
+                <button type="button" class="btn-outline" id="btn-find" disabled onclick="findMatches(); return false;">Найти мои мэтчи</button>
             </div>
         </section>
 
@@ -300,13 +300,13 @@
                 <div class="progress-header">
                     <button type="button" class="btn-back-arrow" id="btn-back-4" onclick="goToStep(2); return false;">←</button>
                     <div class="progress-bar">
-                        <div class="progress-step completed">1</div>
-                        <div class="progress-line active"></div>
-                        <div class="progress-step completed">2</div>
-                        <div class="progress-line active"></div>
-                        <div class="progress-step completed">3</div>
-                        <div class="progress-line active"></div>
-                        <div class="progress-step active">4</div>
+                        <div class="progress-step">1</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">2</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">3</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">4</div>
                     </div>
                 </div>
                 

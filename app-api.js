@@ -1,5 +1,7 @@
 // Состояние приложения с интеграцией backend API
 console.log('app-api.js загружен');
+console.log('DOM готов:', document.readyState);
+
 const state = {
     userId: null,  // ID пользователя из backend
     anonymousId: localStorage.getItem('skincode_anonymous_id') || null,
@@ -43,6 +45,13 @@ const elements = {
 
 // Инициализация
 async function init() {
+    console.log('Инициализация приложения...');
+    console.log('DOM элементы:', {
+        btnStart: elements.btnStart,
+        undertoneBtns: elements.undertoneBtns.length,
+        skinBtns: elements.skinBtns.length
+    });
+    
     try {
         // Создаем или получаем пользователя
         await initUser();

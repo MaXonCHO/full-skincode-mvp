@@ -6,7 +6,8 @@ import uuid
 import os
 import datetime
 
-from database import get_db, engine, Base
+from database import get_db, engine, Base, SessionLocal
+from product_utils import product_image_url, infer_category
 from models import User, Product, UserProduct, Recommendation
 from schemas import (
     UserCreate, UserResponse,
@@ -86,40 +87,21 @@ def load_products_endpoint(products_data: List[dict]):
         db.query(Product).delete()
         db.commit()
 
-        # Генерируем URL изображения на основе бренда
-        image_mapping = {
-            'MAC': 'assets/product-1.png',
-            'Estée Lauder': 'assets/product-2.png',
-            'Dior': 'assets/product-3.png',
-            'NARS': 'assets/product-4.png',
-            'Fenty Beauty': 'assets/product-5.png',
-            'Lancôme': 'assets/product-1.png',
-            'YSL Beauty': 'assets/product-2.png',
-            'Clinique': 'assets/product-3.png',
-            'Clarins': 'assets/product-4.png',
-            'Shiseido': 'assets/product-5.png',
-            'Kevyn Aucoin': 'assets/product-1.png',
-            'SCINIC': 'assets/product-2.png',
-            'Cellcosmet & Cellmen': 'assets/product-3.png'
-        }
-
         products_count = 0
         for row in products_data:
             brand = row.get('brand', '')
             line = row.get('name', '')
-            shade = row.get('shade_value', '')
-
-            image_url = image_mapping.get(brand, 'assets/example.png')
+            shade = row.get('shade_value', '') or row.get('shade_name', '')
 
             product = Product(
                 brand=brand,
                 line=line,
                 shade=shade,
-                hex=shade or '#FFFFFF',
-                image_url=image_url,
+                hex='#E8D5C4',
+                image_url=product_image_url(brand),
                 product_url=row.get('product_url', ''),
                 price=float(row.get('price_actual', 0)) if row.get('price_actual') else 0,
-                category='neutral'
+                category=infer_category(shade, row.get('shade_name', ''))
             )
 
             db.add(product)
@@ -208,7 +190,12 @@ def add_user_product_endpoint(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
-    return add_user_product(db, user_id, user_product.product_id)
+    result = add_user_product(db, user_id, user_product.product_id)
+    try:
+        RecommendationEngine(db).update_co_occurrence_matrix()
+    except Exception:
+        pass
+    return result
 
 
 @app.delete("/users/{user_id}/products/{product_id}")
@@ -304,8 +291,12 @@ def get_recommendations_endpoint(request: RecommendationRequest, db: Session = D
         top_k=5
     )
     
-    # Сохраняем рекомендации в базу
+    # Сохраняем рекомендации и обновляем co-occurrence graph
     engine.save_recommendations(request.user_id, recommendations_data)
+    try:
+        engine.update_co_occurrence_matrix()
+    except Exception:
+        pass
     
     # Формируем ответ
     recommendations = []

@@ -1,5 +1,6 @@
 // API клиент для SkinCode backend
-const API_BASE_URL = 'https://full-skincode-mvp-production.up.railway.app';
+const API_BASE_URL = (typeof window !== 'undefined' && window.SKINCODE_API_URL)
+    || 'https://full-skincode-mvp-production.up.railway.app';
 
 class SkinCodeAPI {
     constructor(baseUrl = API_BASE_URL) {

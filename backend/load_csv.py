@@ -6,87 +6,76 @@ import os
 import csv
 import requests
 import io
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from database import engine, Base, SessionLocal
+from database import SessionLocal
 from models import Product
-from sqlalchemy.orm import Session
+from product_utils import product_image_url, infer_category, DEFAULT_PRODUCT_IMAGE
 
 
 def load_csv_to_database(csv_file_path=None, csv_url=None):
     """Загружает данные из CSV файла или URL в базу данных."""
     db = SessionLocal()
     try:
-        # Очищаем существующие продукты
         db.query(Product).delete()
         db.commit()
 
-        # Загружаем CSV из URL или из локального файла
         if csv_url:
             response = requests.get(csv_url)
             response.raise_for_status()
             csv_file = io.StringIO(response.text)
+            close_after = False
         elif csv_file_path:
-            csv_file = open(csv_file_path, 'r', encoding='utf-8')
+            csv_file = open(csv_file_path, "r", encoding="utf-8")
+            close_after = True
         else:
             raise ValueError("Either csv_file_path or csv_url must be provided")
 
         reader = csv.DictReader(csv_file)
-
         products_count = 0
+
         for row in reader:
-            brand = row.get('brand', '')
-            line = row.get('name', '')
-            shade = row.get('shade_value', '')
+            brand = (row.get("brand") or "").strip()
+            line = (row.get("name") or "").strip()
+            shade = (row.get("shade_value") or row.get("shade_name") or "").strip()
+            shade_name = (row.get("shade_name") or "").strip()
 
-            # Генерируем URL изображения на основе бренда
-            # Используем product-1.png, product-2.png и т.д. для разных брендов
-            image_mapping = {
-                'MAC': 'assets/product-1.png',
-                'Estée Lauder': 'assets/product-2.png',
-                'Dior': 'assets/product-3.png',
-                'NARS': 'assets/product-4.png',
-                'Fenty Beauty': 'assets/product-5.png',
-                'Lancôme': 'assets/product-1.png',
-                'YSL Beauty': 'assets/product-2.png',
-                'Clinique': 'assets/product-3.png',
-                'Clarins': 'assets/product-4.png',
-                'Shiseido': 'assets/product-5.png',
-                'Kevyn Aucoin': 'assets/product-1.png',
-                'SCINIC': 'assets/product-2.png',
-                'Cellcosmet & Cellmen': 'assets/product-3.png'
-            }
+            if not brand or not line:
+                continue
+            if not shade and not shade_name:
+                continue
 
-            image_url = image_mapping.get(brand, 'assets/example.png')
+            display_shade = shade or shade_name
+            category = infer_category(display_shade, shade_name)
 
-            # Маппинг полей CSV на структуру базы данных
             product = Product(
                 brand=brand,
-                line=line,  # Используем name как линейку
-                shade=shade,  # Используем shade_value как оттенок
-                hex=shade or '#FFFFFF',  # Используем shade_value как hex
-                image_url=image_url,
-                product_url=row.get('product_url', ''),
-                price=float(row.get('price_actual', 0)) if row.get('price_actual') else 0,
-                category='neutral'  # Заглушка для категории
+                line=line,
+                shade=display_shade,
+                hex="#E8D5C4",
+                image_url=product_image_url(brand),
+                product_url=row.get("product_url", ""),
+                price=float(row.get("price_actual") or 0) if row.get("price_actual") else 0,
+                category=category,
             )
-
             db.add(product)
             products_count += 1
 
         db.commit()
         print(f"Загружено {products_count} продуктов из CSV файла.")
 
-        if not csv_url:
+        if close_after:
             csv_file.close()
 
     except Exception as e:
         print(f"Ошибка при загрузке данных из CSV: {e}")
         db.rollback()
+        raise
     finally:
         db.close()
 
 
 if __name__ == "__main__":
-    csv_path = os.path.join(os.path.dirname(__file__), 'products.csv')
+    csv_path = os.path.join(os.path.dirname(__file__), "products.csv")
     load_csv_to_database(csv_path)

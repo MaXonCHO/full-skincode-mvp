@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from database import engine, Base, SessionLocal
 from models import Product
-from sqlalchemy.orm import Session
+from product_utils import product_image_url
 
 
 # Начальные данные из data.js
@@ -91,7 +91,9 @@ def init_database():
         
         print("Загрузка начальных данных...")
         for product_data in INITIAL_PRODUCTS:
-            product = Product(**product_data)
+            data = dict(product_data)
+            data["image_url"] = product_image_url(data["brand"])
+            product = Product(**data)
             db.add(product)
         
         db.commit()

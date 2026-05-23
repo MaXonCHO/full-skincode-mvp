@@ -1,9 +1,16 @@
 // Состояние приложения с интеграцией backend API
-console.log('app-api.js загружен');
-console.log('API объект существует:', typeof api !== 'undefined');
+const DEFAULT_PRODUCT_IMAGE = 'Скинкод%20фотки%20сайт/product-1.png';
 
 if (typeof api === 'undefined') {
     console.error('API объект не найден! Проверьте загрузку api.js');
+}
+
+function fixProductImage(url) {
+    if (!url) return DEFAULT_PRODUCT_IMAGE;
+    if (url.startsWith('assets/')) {
+        return `Скинкод%20фотки%20сайт/${url.replace('assets/', '')}`;
+    }
+    return url;
 }
 
 const state = {
@@ -96,14 +103,15 @@ async function initUser() {
         console.log('Начало создания пользователя, anonymousId:', state.anonymousId);
         console.log('API URL:', api.baseUrl);
         
-        // Создаем нового пользователя (для MVP всегда создаем нового)
         const user = await api.createUser(state.anonymousId);
-        console.log('Пользователь создан:', user);
-        
         state.userId = user.id;
-        state.anonymousId = user.anonymous_id;
-        localStorage.setItem('skincode_anonymous_id', user.anonymous_id);
-        console.log('Создан новый пользователь:', state.userId);
+        if (user.anonymous_id) {
+            state.anonymousId = user.anonymous_id;
+            localStorage.setItem('skincode_anonymous_id', user.anonymous_id);
+        }
+        if (user.undertone) state.undertone = user.undertone;
+        if (user.skin_type) state.skinType = user.skin_type;
+        console.log('Пользователь:', state.userId, state.anonymousId);
     } catch (error) {
         console.error('Ошибка инициализации пользователя:', error);
         console.error('Детали ошибки:', error.message, error.stack);
@@ -113,14 +121,19 @@ async function initUser() {
 // Загрузка данных продуктов
 async function loadProductsData() {
     try {
-        state.allProducts = await api.getProducts(0, 1000);
-        
-        // Извлекаем уникальные бренды
-        const brandSet = new Set(state.allProducts.map(p => p.brand));
-        state.brands = Array.from(brandSet).sort();
-        
+        const pageSize = 500;
+        let skip = 0;
+        const all = [];
+        while (true) {
+            const batch = await api.getProducts(skip, pageSize);
+            if (!batch.length) break;
+            all.push(...batch);
+            if (batch.length < pageSize) break;
+            skip += pageSize;
+        }
+        state.allProducts = all;
+        state.brands = [...new Set(state.allProducts.map(p => p.brand))].sort();
         console.log('Загружено продуктов:', state.allProducts.length);
-        console.log('Бренды:', state.brands);
     } catch (error) {
         console.error('Ошибка загрузки продуктов:', error);
     }
@@ -369,7 +382,7 @@ function onBrandChange() {
             const item = document.createElement('div');
             item.className = 'native-dropdown-item';
             item.onclick = () => selectLine(line, image);
-            item.innerHTML = `<img src="${image}" alt="" style="width:28px;height:36px;object-fit:contain;"><span>${line}</span>`;
+            item.innerHTML = `<img src="${fixProductImage(image)}" alt="" style="width:28px;height:36px;object-fit:contain;"><span>${line}</span>`;
             elements.lineDropdownList.appendChild(item);
         });
         
@@ -449,7 +462,7 @@ async function addProduct() {
             line: product.line,
             shade: product.shade,
             hex: product.hex,
-            image: product.image_url
+            image: fixProductImage(product.image_url)
         };
 
         state.products.push(productData);
@@ -527,32 +540,23 @@ async function findMatches() {
     const loadingSteps = document.querySelectorAll('.loading-step');
     loadingSteps.forEach(step => step.classList.remove('active', 'completed'));
 
-    setTimeout(() => {
-        loadingSteps[0]?.classList.add('active');
-    }, 100);
+    const activateStep = (index) => {
+        const el = loadingSteps[index] || document.getElementById(`step-analyze-${index + 1}`);
+        el?.classList.add('active');
+    };
+    const completeStep = (index) => {
+        const el = loadingSteps[index] || document.getElementById(`step-analyze-${index + 1}`);
+        el?.classList.remove('active');
+        el?.classList.add('completed');
+    };
 
-    setTimeout(() => {
-        loadingSteps[0]?.classList.remove('active');
-        loadingSteps[0]?.classList.add('completed');
-    }, 800);
+    setTimeout(() => activateStep(0), 100);
 
-    setTimeout(() => {
-        loadingSteps[1]?.classList.add('active');
-    }, 900);
-
-    setTimeout(() => {
-        loadingSteps[1]?.classList.remove('active');
-        loadingSteps[1]?.classList.add('completed');
-    }, 1600);
-
-    setTimeout(() => {
-        loadingSteps[2]?.classList.add('active');
-    }, 1700);
-
-    setTimeout(() => {
-        loadingSteps[2]?.classList.remove('active');
-        loadingSteps[2]?.classList.add('completed');
-    }, 2400);
+    setTimeout(() => completeStep(0), 800);
+    setTimeout(() => activateStep(1), 900);
+    setTimeout(() => completeStep(1), 1600);
+    setTimeout(() => activateStep(2), 1700);
+    setTimeout(() => completeStep(2), 2400);
 
     // Переход к результатам
     setTimeout(async () => {
@@ -578,26 +582,123 @@ async function generateResults() {
         
         console.log('Рекомендации:', recommendations);
         
-        elements.resultsGrid.innerHTML = recommendations.map((rec, idx) => `
+        if (!recommendations.length) {
+            elements.resultsGrid.innerHTML = '<p class="subtitle">Пока недостаточно данных для точного мэтча. Добавь ещё один знакомый тональник или попробуй позже.</p>';
+            window.currentRecommendations = [];
+            return;
+        }
+
+        elements.resultsGrid.innerHTML = recommendations.map((rec, idx) => {
+            const img = fixProductImage(rec.product.image_url);
+            const url = rec.product.product_url || '#';
+            return `
             <div class="result-card">
                 <div class="result-rank">${idx + 1}</div>
                 <div class="result-image">
-                    <img src="${rec.product.image_url}" alt="${rec.product.shade}" loading="lazy">
+                    <img src="${img}" alt="${rec.product.shade}" loading="lazy">
                 </div>
                 <div class="result-brand">${rec.product.brand}</div>
                 <div class="result-line">${rec.product.line}</div>
                 <div class="result-shade">${rec.product.shade}</div>
-                ${rec.product.price ? `<div class="result-price">${rec.product.price} ₽</div>` : ''}
-                <button class="btn-buy" onclick="window.open('${rec.product.product_url || '#'}', '_blank')">Купить</button>
-            </div>
-        `).join('');
-        
-        // Сохраняем рекомендации для скачивания
-        window.currentRecommendations = recommendations;
+                ${rec.product.price ? `<div class="result-price">${Math.round(rec.product.price)} ₽</div>` : ''}
+                <button class="btn-buy" type="button" data-url="${url.replace(/"/g, '&quot;')}">Купить</button>
+            </div>`;
+        }).join('');
+
+        elements.resultsGrid.querySelectorAll('.btn-buy').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const url = btn.getAttribute('data-url');
+                if (url && url !== '#') window.open(url, '_blank');
+            });
+        });
+
+        window.currentRecommendations = recommendations.map((rec) => ({
+            brand: rec.product.brand,
+            line: rec.product.line,
+            shade: rec.product.shade,
+            image: fixProductImage(rec.product.image_url),
+            price: rec.product.price ? Math.round(rec.product.price) : null,
+            url: rec.product.product_url || '#',
+        }));
     } catch (error) {
         console.error('Ошибка генерации рекомендаций:', error);
         elements.resultsGrid.innerHTML = '<p>Ошибка загрузки рекомендаций. Попробуйте позже.</p>';
     }
+}
+
+async function downloadRecommendations() {
+    if (!window.currentRecommendations || window.currentRecommendations.length === 0) {
+        alert('Нет рекомендаций для скачивания');
+        return;
+    }
+
+    const container = document.createElement('div');
+    container.style.cssText = 'width:210mm;min-height:297mm;padding:20px;background:#fff;font-family:Inter,Arial,sans-serif;position:fixed;top:-9999px;left:-9999px;';
+
+    let html = `
+        <div style="text-align:center;margin-bottom:30px;">
+            <h1 style="font-size:32px;margin-bottom:10px;color:#0f0f0f;">Скинкод</h1>
+            <p style="font-size:18px;color:#646464;">Твоя подборка тональных средств</p>
+        </div>`;
+
+    window.currentRecommendations.forEach((prod) => {
+        html += `
+            <div style="display:flex;align-items:center;margin-bottom:20px;">
+                <img src="${prod.image}" alt="" style="width:60px;height:80px;object-fit:contain;margin-right:20px;">
+                <div>
+                    <div style="font-weight:600;">${prod.brand} — ${prod.line}</div>
+                    <div>Оттенок: ${prod.shade}</div>
+                    ${prod.price ? `<div>Цена: ${prod.price} ₽</div>` : ''}
+                </div>
+            </div>`;
+    });
+
+    container.innerHTML = html;
+    document.body.appendChild(container);
+
+    await Promise.all([...container.querySelectorAll('img')].map((img) => new Promise((resolve) => {
+        if (img.complete) resolve();
+        else { img.onload = resolve; img.onerror = resolve; }
+    })));
+
+    try {
+        const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = doc.internal.pageSize.getHeight();
+        const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
+        doc.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, canvas.width * ratio, canvas.height * ratio);
+        doc.save(`skinkod-podborka-${Date.now()}.pdf`);
+    } catch (error) {
+        console.error('PDF error:', error);
+        alert('Ошибка при генерации PDF');
+    } finally {
+        document.body.removeChild(container);
+    }
+}
+
+function showHelpModal(type) {
+    const modal = document.getElementById('help-modal-overlay');
+    const title = document.getElementById('help-modal-title');
+    const content = document.getElementById('help-modal-content');
+    const helpData = {
+        undertone: {
+            title: 'Как определить подтон кожи?',
+            content: '<strong>Теплый:</strong> зелёные вены, золото смотрится лучше.<br><br><strong>Холодный:</strong> сине-фиолетовые вены, серебро.<br><br><strong>Нейтральный:</strong> смешанные вены.<br><br><strong>Оливковый:</strong> зеленоватый подтон кожи.',
+        },
+        skin: {
+            title: 'Как определить тип кожи?',
+            content: '<strong>Сухая:</strong> стянутость, шелушение.<br><br><strong>Жирная:</strong> блеск в Т-зоне.<br><br><strong>Комбинированная:</strong> жирная Т-зона, сухие щёки.<br><br><strong>Нормальная:</strong> ровный комфортный баланс.',
+        },
+    };
+    title.textContent = helpData[type].title;
+    content.innerHTML = helpData[type].content;
+    modal.classList.add('active');
+}
+
+function closeHelpModal() {
+    document.getElementById('help-modal-overlay')?.classList.remove('active');
 }
 
 // Сброс приложения
@@ -626,6 +727,65 @@ async function resetApp() {
     goToStep(1);
 }
 
-// Запуск после загрузки DOM
-console.log('Запуск init() после загрузки DOM');
-document.addEventListener('DOMContentLoaded', init);
+window.toggleLineDropdown = toggleLineDropdown;
+window.showHelpModal = showHelpModal;
+window.closeHelpModal = closeHelpModal;
+window.downloadRecommendations = downloadRecommendations;
+
+document.addEventListener('DOMContentLoaded', () => {
+    init();
+    animateTrustNumbers();
+    initScrollAnimations();
+    handleStartQueryParam();
+});
+
+function animateTrustNumbers() {
+    document.querySelectorAll('.number-value').forEach((element) => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (!entry.isIntersecting) return;
+                const target = parseInt(element.getAttribute('data-target'), 10);
+                const suffix = element.getAttribute('data-suffix') || '';
+                let current = 0;
+                const step = target / 80;
+                const tick = () => {
+                    current += step;
+                    if (current < target) {
+                        element.innerHTML = Math.floor(current) + suffix;
+                        requestAnimationFrame(tick);
+                    } else {
+                        element.innerHTML = target + suffix;
+                    }
+                };
+                tick();
+                observer.unobserve(element);
+            });
+        }, { threshold: 0.5 });
+        observer.observe(element);
+    });
+}
+
+function initScrollAnimations() {
+    document.querySelectorAll('.step-item-new, .trust-numbers').forEach((el) => {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.2 });
+        observer.observe(el);
+    });
+}
+
+function handleStartQueryParam() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('start') !== 'true') return;
+    document.getElementById('menu-btn').style.display = 'none';
+    document.getElementById('step-1')?.classList.remove('active');
+    if (document.getElementById('step-1')) document.getElementById('step-1').style.display = 'none';
+    document.getElementById('step-1-5')?.classList.add('active');
+    if (document.getElementById('step-1-5')) document.getElementById('step-1-5').style.display = 'block';
+    window.history.replaceState({}, document.title, window.location.pathname);
+}

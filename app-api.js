@@ -103,6 +103,8 @@ async function loadProductsData() {
 
 // Настройка обработчиков событий
 function setupEventListeners() {
+    console.log('Настройка обработчиков событий...');
+    
     // Меню
     elements.menuBtn.addEventListener('click', openMenu);
     elements.menuClose.addEventListener('click', closeMenu);
@@ -180,6 +182,8 @@ function setupEventListeners() {
 
     // Этап 4: начать заново
     elements.btnRestart.addEventListener('click', resetApp);
+    
+    console.log('Обработчики событий настроены');
 }
 
 // Заполнение селектора брендов

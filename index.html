@@ -217,38 +217,34 @@
                 <p class="subtitle">Укажи 1–3 продукта, которые тебе идеально подходят</p>
                 
                 <div class="split-layout">
-                    <!-- Левая часть: селекторы -->
+                    <!-- Левая часть: поиск каталога -->
                     <div class="selectors-panel">
-                        <div class="selector-group">
-                            <label>Бренд</label>
-                            <select id="brand-select" class="glass-select" onchange="onBrandChange()">
-                                <option value="">Выбери бренд</option>
-                            </select>
+                        <div class="catalog-search-panel">
+                            <div class="selector-group">
+                                <label>Поиск бренда</label>
+                                <input type="text" id="brand-search" class="glass-input" placeholder="Например, NARS или MAC">
+                            </div>
+                            <div class="selector-group">
+                                <label>Поиск модели</label>
+                                <input type="text" id="model-search" class="glass-input" placeholder="Например, Double Wear или Studio Fix">
+                            </div>
+                            <div class="selector-group">
+                                <label>Поиск оттенка</label>
+                                <input type="text" id="shade-search" class="glass-input" placeholder="Например, Punjab, NC15 или #e7bf9b">
+                            </div>
+                            <p class="hint" id="product-search-hint">Начни вводить бренд, модель или оттенок, чтобы увидеть совпадения.</p>
+                            <div class="selected-product-chip" id="selected-product-text">Выбери продукт из результатов поиска</div>
+                            <button type="button" class="btn-secondary" id="btn-add" disabled onclick="addProduct(); return false;">
+                                <span>+</span> Добавить
+                            </button>
+                            <p class="hint" id="product-count">Добавлено: 0 из 3</p>
                         </div>
-                        
-                        <div class="selector-group">
-                            <label>Линейка</label>
-                            <div class="native-style-dropdown" id="line-dropdown">
-                                <button type="button" class="native-dropdown-btn" id="line-dropdown-btn" disabled onclick="toggleLineDropdown(); return false;">
-                                    <span class="selected-text" id="line-selected-text">Сначала выбери бренд</span>
-                                    <span class="dropdown-arrow">▼</span>
-                                </button>
-                                <div class="native-dropdown-list" id="line-dropdown-list"></div>
+                        <div class="search-results" id="product-search-results">
+                            <div class="empty-state">
+                                <img src="Скинкод%20фотки%20сайт/icon.png" alt="Иконка" class="empty-icon-img">
+                                <p>Результаты поиска появятся здесь</p>
                             </div>
                         </div>
-                        
-                        <div class="selector-group">
-                            <label>Оттенок</label>
-                            <select id="shade-select" class="glass-select" disabled onchange="onShadeChange()">
-                                <option value="">Сначала выбери линейку</option>
-                            </select>
-                        </div>
-
-                        <button type="button" class="btn-secondary" id="btn-add" disabled onclick="addProduct(); return false;">
-                            <span>+</span> Добавить
-                        </button>
-                        
-                        <p class="hint" id="product-count">Добавлено: 0 из 3</p>
                     </div>
 
                     <!-- Правая часть: добавленные продукты -->

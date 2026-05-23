@@ -113,10 +113,10 @@ class SkinCodeAPI {
         return this.request(`/brands/${encodeURIComponent(brand)}/lines`);
     }
 
-    async searchProducts(query, limit = 10) {
+    async searchProducts({ query = null, brand = null, model = null, shade = null, limit = 10 } = {}) {
         return this.request('/products/search', {
             method: 'POST',
-            body: JSON.stringify({ query, limit })
+            body: JSON.stringify({ query, brand, model, shade, limit })
         });
     }
 

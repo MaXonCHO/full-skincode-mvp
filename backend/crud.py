@@ -71,18 +71,49 @@ def create_product(db: Session, product: ProductCreate) -> Product:
     return db_product
 
 
-def search_products(db: Session, query: str, limit: int = 10) -> List[Product]:
+def search_products(
+    db: Session,
+    query: Optional[str] = None,
+    limit: int = 10,
+    brand: Optional[str] = None,
+    model: Optional[str] = None,
+    shade: Optional[str] = None,
+) -> List[Product]:
     """
-    Поиск продуктов по бренду, линейке или оттенку.
+    Поиск продуктов по бренду, модели и оттенку.
+    Если передан общий query, он ищет по всем текстовым полям.
     """
-    search_pattern = f"%{query}%"
-    return db.query(Product).filter(
-        or_(
-            Product.brand.ilike(search_pattern),
-            Product.line.ilike(search_pattern),
-            Product.shade.ilike(search_pattern)
+    filters = []
+
+    if query:
+        search_pattern = f"%{query}%"
+        filters.append(
+            or_(
+                Product.brand.ilike(search_pattern),
+                Product.line.ilike(search_pattern),
+                Product.shade.ilike(search_pattern),
+                Product.hex.ilike(search_pattern),
+                Product.category.ilike(search_pattern),
+            )
         )
-    ).limit(limit).all()
+
+    if brand:
+        filters.append(Product.brand.ilike(f"%{brand}%"))
+    if model:
+        filters.append(Product.line.ilike(f"%{model}%"))
+    if shade:
+        filters.append(
+            or_(
+                Product.shade.ilike(f"%{shade}%"),
+                Product.hex.ilike(f"%{shade}%"),
+            )
+        )
+
+    query_obj = db.query(Product)
+    if filters:
+        query_obj = query_obj.filter(and_(*filters))
+
+    return query_obj.order_by(Product.brand.asc(), Product.line.asc(), Product.shade.asc()).limit(limit).all()
 
 
 def get_brands(db: Session) -> List[str]:

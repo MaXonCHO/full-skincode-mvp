@@ -20,11 +20,10 @@ const state = {
     anonymousId: localStorage.getItem('skincode_anonymous_id') || null,
     undertone: null,
     skinType: null,
-    selectedBrand: null,
-    selectedLine: null,
+    selectedProduct: null,
     products: [],  // добавленные продукты пользователя
-    allProducts: [],  // все продукты из backend для селекторов
-    brands: [],
+    searchResults: [],
+    catalogLoaded: false,
     maxProducts: 3
 };
 
@@ -40,11 +39,11 @@ const elements = {
     btnBack1_5: document.getElementById('btn-back-1-5'),
     btnBack2: document.getElementById('btn-back-2'),
     btnBack4: document.getElementById('btn-back-4'),
-    brandSelect: document.getElementById('brand-select'),
-    lineDropdownBtn: document.getElementById('line-dropdown-btn'),
-    lineDropdownList: document.getElementById('line-dropdown-list'),
-    lineSelectedText: document.getElementById('line-selected-text'),
-    shadeSelect: document.getElementById('shade-select'),
+    brandSearch: document.getElementById('brand-search'),
+    modelSearch: document.getElementById('model-search'),
+    shadeSearch: document.getElementById('shade-search'),
+    searchResults: document.getElementById('product-search-results'),
+    selectedProductText: document.getElementById('selected-product-text'),
     btnAdd: document.getElementById('btn-add'),
     btnFind: document.getElementById('btn-find'),
     productsList: document.getElementById('products-list'),
@@ -73,15 +72,10 @@ async function init() {
         await initUser();
         console.log('initUser() завершен');
         
-        console.log('Начало loadProductsData()');
+        console.log('Начало loadFeaturedProducts()');
         // Загружаем данные продуктов
-        await loadProductsData();
-        console.log('loadProductsData() завершен');
-        
-        console.log('Начало populateBrandSelect()');
-        // Заполняем селекторы
-        populateBrandSelect();
-        console.log('populateBrandSelect() завершен');
+        await loadFeaturedProducts();
+        console.log('loadFeaturedProducts() завершен');
         
         console.log('Начало setupEventListeners()');
         // Настраиваем обработчики событий
@@ -122,24 +116,22 @@ async function initUser() {
     }
 }
 
-// Загрузка данных продуктов
-async function loadProductsData() {
+let searchDebounceTimer = null;
+
+// Загрузка первых продуктов для стартовых подсказок
+async function loadFeaturedProducts() {
     try {
-        const pageSize = 500;
-        let skip = 0;
-        const all = [];
-        while (true) {
-            const batch = await api.getProducts(skip, pageSize);
-            if (!batch.length) break;
-            all.push(...batch);
-            if (batch.length < pageSize) break;
-            skip += pageSize;
-        }
-        state.allProducts = all;
-        state.brands = [...new Set(state.allProducts.map(p => p.brand))].sort();
-        console.log('Загружено продуктов:', state.allProducts.length);
+        const batch = await api.getProducts(0, 24);
+        state.searchResults = batch || [];
+        state.catalogLoaded = true;
+        renderSearchResults(state.searchResults);
+        updateSearchHint();
+        console.log('Загружено стартовых продуктов:', state.searchResults.length);
     } catch (error) {
         console.error('Ошибка загрузки продуктов:', error);
+        state.searchResults = [];
+        renderSearchResults([]);
+        updateSearchHint('Каталог пока не загрузился, но поиск всё равно доступен после синхронизации backend.');
     }
 }
 
@@ -187,6 +179,12 @@ function setupEventListeners() {
         });
     });
 
+    // Поиск каталога
+    [elements.brandSearch, elements.modelSearch, elements.shadeSearch].forEach((input) => {
+        if (!input) return;
+        input.addEventListener('input', () => scheduleCatalogSearch());
+    });
+
     // Этап 4: скачать подборку
     if (elements.btnDownload) elements.btnDownload.addEventListener('click', downloadRecommendations);
 
@@ -194,12 +192,6 @@ function setupEventListeners() {
     if (elements.btnRestart) elements.btnRestart.addEventListener('click', resetApp);
 
     console.log('Обработчики событий настроены');
-}
-
-// Заполнение селектора брендов
-function populateBrandSelect() {
-    elements.brandSelect.innerHTML = '<option value="">Выбери бренд</option>' +
-        state.brands.map(brand => `<option value="${brand}">${brand}</option>`).join('');
 }
 
 // Выбор подтона
@@ -319,95 +311,46 @@ function goToStep(stepNum) {
     updateProgressBar(stepNum);
 }
 
-// Обработчик смены бренда
-function onBrandChange() {
-    const brand = elements.brandSelect.value;
-    state.selectedBrand = brand;
-    state.selectedLine = null;
-    
-    console.log('onBrandChange - выбран бренд:', brand);
-    console.log('lineDropdownBtn:', elements.lineDropdownBtn);
-    console.log('lineDropdownList:', elements.lineDropdownList);
-    
-    elements.lineDropdownBtn.disabled = !brand;
-    elements.shadeSelect.disabled = true;
-    elements.shadeSelect.innerHTML = '<option value="">Сначала выбери линейку</option>';
-    
-    if (brand) {
-        const brandProducts = state.allProducts.filter(p => p.brand === brand);
-        const lines = [...new Set(brandProducts.map(p => p.line))];
-        
-        console.log('Найдено линеек:', lines.length, lines);
-        
-        elements.lineSelectedText.textContent = 'Выбери линейку';
-        elements.lineDropdownList.innerHTML = '';
-        
-        lines.forEach(line => {
-            // Get first shade image for this line
-            const lineProducts = brandProducts.filter(p => p.line === line);
-            const firstShade = lineProducts[0];
-            const image = firstShade ? firstShade.image_url : '';
-            
-            const item = document.createElement('div');
-            item.className = 'native-dropdown-item';
-            item.onclick = () => selectLine(line, image);
-            item.innerHTML = `<img src="${fixProductImage(image)}" alt="" style="width:28px;height:36px;object-fit:contain;"><span>${line}</span>`;
-            elements.lineDropdownList.appendChild(item);
+function scheduleCatalogSearch() {
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(runCatalogSearch, 250);
+}
+
+async function runCatalogSearch() {
+    const brand = elements.brandSearch?.value?.trim() || '';
+    const model = elements.modelSearch?.value?.trim() || '';
+    const shade = elements.shadeSearch?.value?.trim() || '';
+
+    state.selectedProduct = null;
+    updateSelectedProductView();
+    updateAddButton();
+
+    if (!brand && !model && !shade) {
+        renderSearchResults(state.searchResults);
+        updateSearchHint('Пока можно выбрать из первых продуктов каталога или начать печатать в полях поиска.');
+        return;
+    }
+
+    try {
+        updateSearchHint('Ищем бренд, модель и оттенок в каталоге...');
+        const results = await api.searchProducts({
+            brand: brand || null,
+            model: model || null,
+            shade: shade || null,
+            limit: 24
         });
-        
-        console.log('Dropdown заполнен, элементов:', elements.lineDropdownList.children.length);
-    } else {
-        elements.lineSelectedText.textContent = 'Сначала выбери бренд';
-        elements.lineDropdownList.innerHTML = '';
+        renderSearchResults(results.products || []);
+        updateSearchHint(results.total ? `Найдено ${results.total} совпадений.` : 'Ничего не найдено. Попробуй изменить фильтры.');
+    } catch (error) {
+        console.error('Ошибка поиска каталога:', error);
+        updateSearchHint('Не удалось выполнить поиск. Проверь соединение с API.');
+        renderSearchResults([]);
     }
-    
-    updateAddButton();
-}
-
-// Функции для кастомного dropdown линеек
-function toggleLineDropdown() {
-    elements.lineDropdownList.classList.toggle('show');
-    elements.lineDropdownBtn.classList.toggle('open');
-}
-
-function selectLine(line, image) {
-    state.selectedLine = line;
-    elements.lineSelectedText.textContent = line;
-    elements.lineDropdownList.classList.remove('show');
-    elements.lineDropdownBtn.classList.remove('open');
-    
-    // Populate shades
-    elements.shadeSelect.disabled = false;
-    updateAddButton();
-    
-    if (state.selectedBrand) {
-        const lineProducts = state.allProducts.filter(p => p.brand === state.selectedBrand && p.line === line);
-        elements.shadeSelect.innerHTML = '<option value="">Выбери оттенок</option>' +
-            lineProducts.map(p => `<option value="${p.id}">${p.shade}</option>`).join('');
-    }
-    
-    console.log('Линейка:', line);
-}
-
-// Закрытие dropdown при клике вне его
-document.addEventListener('click', (e) => {
-    const dropdown = document.getElementById('line-dropdown');
-    if (dropdown && !dropdown.contains(e.target)) {
-        elements.lineDropdownList.classList.remove('show');
-        elements.lineDropdownBtn.classList.remove('open');
-    }
-});
-
-// Обработчик выбора оттенка
-function onShadeChange() {
-    updateAddButton();
 }
 
 // Обновление состояния кнопки добавления
 function updateAddButton() {
-    const canAdd = elements.brandSelect.value && 
-                   state.selectedLine && 
-                   elements.shadeSelect.value !== '' &&
+    const canAdd = state.selectedProduct &&
                    state.products.length < state.maxProducts;
     elements.btnAdd.disabled = !canAdd;
 }
@@ -416,23 +359,17 @@ function updateAddButton() {
 async function addProduct() {
     if (state.products.length >= state.maxProducts) return;
 
-    const productId = parseInt(elements.shadeSelect.value, 10);
-    if (!productId) return;
+    const product = state.selectedProduct;
+    if (!product) return;
 
-    const product = state.allProducts.find(p => p.id === productId);
-    if (!product) {
-        alert('Каталог ещё загружается. Подожди пару секунд и попробуй снова.');
-        return;
-    }
-
-    if (state.products.some(p => p.id === productId)) {
+    if (state.products.some(p => p.id === product.id)) {
         alert('Этот продукт уже добавлен.');
         return;
     }
 
     if (state.userId && typeof api !== 'undefined') {
         try {
-            await api.addUserProduct(state.userId, productId);
+            await api.addUserProduct(state.userId, product.id);
         } catch (error) {
             console.error('Ошибка добавления продукта на сервер:', error);
             alert('Не удалось сохранить на сервер. Проверь подключение к API.');
@@ -446,21 +383,16 @@ async function addProduct() {
         line: product.line,
         shade: product.shade,
         hex: product.hex,
-        image: fixProductImage(product.image_url)
+        image: fixProductImage(product.image_url),
+        product_url: product.product_url || ''
     });
 
     renderProducts();
     updateProductCount();
     updateFindButton();
 
-    elements.brandSelect.value = '';
-    state.selectedBrand = null;
-    state.selectedLine = null;
-    elements.lineSelectedText.textContent = 'Сначала выбери бренд';
-    elements.lineDropdownBtn.disabled = true;
-    elements.lineDropdownList.innerHTML = '';
-    elements.shadeSelect.disabled = true;
-    elements.shadeSelect.innerHTML = '<option value="">Сначала выбери линейку</option>';
+    state.selectedProduct = null;
+    updateSelectedProductView();
     updateAddButton();
 }
 
@@ -503,6 +435,70 @@ function renderProducts() {
             <button class="btn-delete" onclick="removeProduct(${product.id})">✕</button>
         </div>
     `).join('');
+}
+
+function renderSearchResults(products = []) {
+    state.searchResults = products;
+
+    if (!elements.searchResults) return;
+
+    if (!products.length) {
+        elements.searchResults.innerHTML = `
+            <div class="empty-state">
+                <span class="empty-icon">🔎</span>
+                <p>Ничего не найдено. Попробуй другой бренд, модель или оттенок.</p>
+            </div>
+        `;
+        return;
+    }
+
+    elements.searchResults.innerHTML = products.map((product) => {
+        const image = fixProductImage(product.image_url);
+        const isSelected = state.selectedProduct && state.selectedProduct.id === product.id;
+        return `
+            <button type="button" class="search-result-card ${isSelected ? 'selected' : ''}" data-product-id="${product.id}">
+                <div class="search-result-image">
+                    <img src="${image}" alt="${product.shade}" loading="lazy">
+                </div>
+                <div class="search-result-content">
+                    <div class="search-result-brand">${product.brand}</div>
+                    <div class="search-result-line">${product.line}</div>
+                    <div class="search-result-shade">${product.shade}</div>
+                    ${product.price ? `<div class="search-result-price">${Math.round(product.price)} ₽</div>` : ''}
+                </div>
+            </button>
+        `;
+    }).join('');
+
+    elements.searchResults.querySelectorAll('[data-product-id]').forEach((button) => {
+        button.addEventListener('click', () => {
+            const productId = parseInt(button.getAttribute('data-product-id'), 10);
+            const selected = products.find((item) => item.id === productId);
+            if (selected) {
+                state.selectedProduct = selected;
+                updateSelectedProductView();
+                updateAddButton();
+                elements.searchResults.querySelectorAll('.search-result-card').forEach((card) => card.classList.remove('selected'));
+                button.classList.add('selected');
+            }
+        });
+    });
+}
+
+function updateSelectedProductView() {
+    if (!elements.selectedProductText) return;
+    if (!state.selectedProduct) {
+        elements.selectedProductText.textContent = 'Выбери продукт из результатов поиска';
+        return;
+    }
+    elements.selectedProductText.textContent = `${state.selectedProduct.brand} · ${state.selectedProduct.line} · ${state.selectedProduct.shade}`;
+}
+
+function updateSearchHint(text) {
+    const hint = document.getElementById('product-search-hint');
+    if (hint) {
+        hint.textContent = text;
+    }
 }
 
 // Обновление счетчика продуктов
@@ -687,24 +683,25 @@ function closeHelpModal() {
 async function resetApp() {
     state.undertone = null;
     state.skinType = null;
-    state.selectedBrand = null;
-    state.selectedLine = null;
+    state.selectedProduct = null;
     state.products = [];
+    state.searchResults = [];
     
     elements.undertoneBtns.forEach(b => b.classList.remove('selected'));
     elements.skinBtns.forEach(b => b.classList.remove('selected'));
     elements.btnStep1_5.disabled = true;
     
-    elements.brandSelect.value = '';
-    elements.lineDropdownBtn.disabled = true;
-    elements.lineSelectedText.textContent = 'Сначала выбери бренд';
-    elements.lineDropdownList.innerHTML = '';
-    elements.shadeSelect.innerHTML = '<option value="">Сначала выбери линейку</option>';
-    elements.shadeSelect.disabled = true;
+    if (elements.brandSearch) elements.brandSearch.value = '';
+    if (elements.modelSearch) elements.modelSearch.value = '';
+    if (elements.shadeSearch) elements.shadeSearch.value = '';
+    renderSearchResults(state.searchResults);
+    updateSearchHint('Пока можно выбрать из первых продуктов каталога или начать печатать в полях поиска.');
+    updateSelectedProductView();
     
     renderProducts();
     updateProductCount();
     updateFindButton();
+    updateAddButton();
     
     goToStep(1);
 }
@@ -713,10 +710,6 @@ window.goToStep = goToStep;
 window.findMatches = findMatches;
 window.addProduct = addProduct;
 window.removeProduct = removeProduct;
-window.onBrandChange = onBrandChange;
-window.onShadeChange = onShadeChange;
-window.selectLine = selectLine;
-window.toggleLineDropdown = toggleLineDropdown;
 window.showHelpModal = showHelpModal;
 window.closeHelpModal = closeHelpModal;
 window.downloadRecommendations = downloadRecommendations;

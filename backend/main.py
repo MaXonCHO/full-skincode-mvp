@@ -2,12 +2,10 @@ from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Optional
-import uuid
 import os
-import datetime
 
 from database import get_db, engine, Base, SessionLocal
-from product_utils import product_image_url, infer_category
+from catalog_sync import sync_default_catalog, build_product_payload, upsert_product
 from models import User, Product, UserProduct, Recommendation
 from schemas import (
     UserCreate, UserResponse,
@@ -19,12 +17,11 @@ from schemas import (
 from crud import (
     get_user, get_user_by_anonymous_id, create_user, update_user,
     get_products, get_product, get_products_by_brand, get_products_by_brand_and_line,
-    create_product, search_products, get_brands, get_lines_by_brand,
+    search_products, get_brands, get_lines_by_brand,
     add_user_product, get_user_products, delete_user_product, get_user_recommendations
 )
 from recommendation_engine import RecommendationEngine
 from init_db import init_database
-from load_csv import load_csv_to_database
 
 # Создаем таблицы
 Base.metadata.create_all(bind=engine)
@@ -63,16 +60,17 @@ def init_db_endpoint():
 def load_csv_endpoint():
     """Загружает данные из CSV файла в базу данных."""
     try:
-        # Сначала пробуем загрузить из локального файла
-        csv_path = os.path.join(os.path.dirname(__file__), 'products.csv')
-        if os.path.exists(csv_path):
-            load_csv_to_database(csv_file_path=csv_path)
-            return {"status": "success", "message": "CSV data loaded from local file"}
-        else:
-            # Если локальный файл не существует, пробуем GitHub raw URL
-            csv_url = "https://raw.githubusercontent.com/MaXonCHO/full-skincode-mvp/main/backend/products.csv"
-            load_csv_to_database(csv_url=csv_url)
-            return {"status": "success", "message": "CSV data loaded from GitHub"}
+        db = SessionLocal()
+        try:
+            stats = sync_default_catalog(db)
+        finally:
+            db.close()
+        return {
+            "status": "success",
+            "message": "Catalog synchronized from local CSV sources",
+            "created": stats["created"],
+            "updated": stats["updated"],
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -83,32 +81,19 @@ def load_products_endpoint(products_data: List[dict]):
     """Загружает продукты напрямую из данных в базу данных."""
     db = SessionLocal()
     try:
-        # Очищаем существующие продукты
-        db.query(Product).delete()
-        db.commit()
-
-        products_count = 0
+        created = 0
+        updated = 0
         for row in products_data:
-            brand = row.get('brand', '')
-            line = row.get('name', '')
-            shade = row.get('shade_value', '') or row.get('shade_name', '')
-
-            product = Product(
-                brand=brand,
-                line=line,
-                shade=shade,
-                hex='#E8D5C4',
-                image_url=product_image_url(brand),
-                product_url=row.get('product_url', ''),
-                price=float(row.get('price_actual', 0)) if row.get('price_actual') else 0,
-                category=infer_category(shade, row.get('shade_name', ''))
-            )
-
-            db.add(product)
-            products_count += 1
-
+            payload = build_product_payload({k.lower(): str(v) for k, v in row.items() if v is not None})
+            if not payload:
+                continue
+            result = upsert_product(db, payload)
+            if result == "created":
+                created += 1
+            else:
+                updated += 1
         db.commit()
-        return {"status": "success", "message": f"Loaded {products_count} products"}
+        return {"status": "success", "message": "Products synchronized", "created": created, "updated": updated}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
@@ -121,13 +106,17 @@ def load_products_endpoint(products_data: List[dict]):
 def check_csv_endpoint():
     """Проверяет существование CSV файла."""
     try:
-        csv_path = os.path.join(os.path.dirname(__file__), 'products.csv')
-        exists = os.path.exists(csv_path)
-        if exists:
-            size = os.path.getsize(csv_path)
-            return {"status": "success", "exists": True, "size": size, "path": csv_path}
-        else:
-            return {"status": "error", "exists": False, "path": csv_path}
+        tonal_csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tonal_products.csv')
+        legacy_csv_path = os.path.join(os.path.dirname(__file__), 'products.csv')
+        tonal_exists = os.path.exists(tonal_csv_path)
+        legacy_exists = os.path.exists(legacy_csv_path)
+        return {
+            "status": "success" if tonal_exists or legacy_exists else "error",
+            "tonal_exists": tonal_exists,
+            "legacy_exists": legacy_exists,
+            "tonal_path": tonal_csv_path,
+            "legacy_path": legacy_csv_path,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -260,7 +249,14 @@ def search_products_endpoint(search: SearchRequest, db: Session = Depends(get_db
     """
     Поиск продуктов по бренду, линейке или оттенку.
     """
-    products = search_products(db, search.query, search.limit)
+    products = search_products(
+        db,
+        query=search.query,
+        limit=search.limit,
+        brand=search.brand,
+        model=search.model,
+        shade=search.shade,
+    )
     return SearchResponse(products=products, total=len(products))
 
 

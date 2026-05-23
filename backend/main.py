@@ -20,6 +20,7 @@ from crud import (
     add_user_product, get_user_products, delete_user_product, get_user_recommendations
 )
 from recommendation_engine import RecommendationEngine
+from init_db import init_database
 
 # Создаем таблицы
 Base.metadata.create_all(bind=engine)
@@ -40,6 +41,17 @@ app.add_middleware(
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+
+# Initialize database with products
+@app.post("/init-db")
+def init_db_endpoint():
+    """Инициализирует базу данных начальными данными продуктов."""
+    try:
+        init_database()
+        return {"status": "success", "message": "Database initialized with products"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ===== USER ENDPOINTS =====

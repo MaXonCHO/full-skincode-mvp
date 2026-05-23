@@ -7,24 +7,27 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=2024042886">
     <style>
         .page-header {
-            text-align: center;
-            margin-bottom: 64px;
+            text-align: left;
+            margin-bottom: 48px;
+            margin-top: 48px;
         }
         
         .page-title {
-            font-size: 48px;
-            font-weight: 700;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-            margin-bottom: 16px;
+            font-family: 'Playfair Display', serif;
+            font-size: 42px;
+            font-weight: 600;
+            font-style: italic;
+            color: #8C6A4E;
+            letter-spacing: 0.02em;
+            margin-bottom: 8px;
         }
         
         .page-subtitle {
             font-size: 18px;
-            color: var(--text-secondary);
+            color: #7A6B5D;
         }
         
         .faq-container {
@@ -33,17 +36,18 @@
         }
         
         .faq-item {
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(20px);
+            background: rgba(250, 245, 238, 0.75);
+            backdrop-filter: blur(20px) saturate(160%);
             border-radius: 20px;
             margin-bottom: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             overflow: hidden;
             transition: all 0.3s ease;
         }
         
         .faq-item:hover {
-            background: rgba(255, 255, 255, 0.8);
+            background: rgba(250, 245, 238, 0.88);
+            box-shadow: 0 4px 16px rgba(140, 106, 78, 0.1);
         }
         
         .faq-question {
@@ -54,6 +58,7 @@
             align-items: center;
             font-size: 18px;
             font-weight: 600;
+            color: #4A3F35;
             transition: all 0.3s ease;
         }
         
@@ -81,33 +86,45 @@
         .faq-answer-content {
             padding: 0 32px 24px;
             font-size: 15px;
-            color: var(--text-secondary);
-            line-height: 1.8;
+            color: #5C5046;
+            line-height: 1.7;
         }
         
+        /* CTA в стиле trust-numbers */
         .cta-section {
             text-align: center;
-            padding: 64px 48px;
-            background: rgba(255, 255, 255, 0.6);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 60px 48px;
+            margin: 40px 0;
+            border: 1.5px solid rgba(140, 106, 78, 0.35);
+            border-radius: 16px;
+            max-width: 100%;
+            background: transparent;
         }
         
         .cta-title {
-            font-size: 32px;
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
             font-weight: 600;
+            font-style: italic;
+            color: #8C6A4E;
             margin-bottom: 16px;
             letter-spacing: 0.02em;
         }
         
         .cta-text {
             font-size: 16px;
-            color: var(--text-secondary);
+            color: #5C5046;
             margin-bottom: 32px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         @media (max-width: 768px) {
+            .page-header {
+                margin-top: 32px;
+            }
+            
             .page-title {
                 font-size: 32px;
             }
@@ -119,6 +136,15 @@
             
             .faq-answer-content {
                 padding: 0 24px 20px;
+            }
+            
+            .cta-section {
+                padding: 40px 24px;
+                margin: 40px 12px;
+            }
+            
+            .cta-title {
+                font-size: 28px;
             }
         }
     </style>
@@ -135,16 +161,15 @@
             <div class="menu-content">
                 <button class="menu-close" id="menu-close">×</button>
                 <nav class="menu-nav">
-                    <a href="algorithm.html" class="menu-link">На основе чего происходит подбор</a>
                     <a href="how-it-works.html" class="menu-link">Как работает подбор</a>
                     <a href="faq.html" class="menu-link">FAQ</a>
-                    <a href="index.html" class="menu-link menu-link-highlight">Начать подбор</a>
+                    <a href="index.html?start=true" class="menu-link menu-link-highlight">Начать подбор</a>
                 </nav>
             </div>
         </div>
 
         <a href="index.html" class="logo-container">
-            <img src="assets/logo.png" alt="Скинкод" class="logo-img">
+            <img src="Скинкод%20фотки%20сайт/logo.png" alt="Скинкод" class="logo-img">
         </a>
 
         <div class="page-header">
@@ -213,7 +238,7 @@
         <div class="cta-section">
             <h2 class="cta-title">Не нашли ответ на свой вопрос?</h2>
             <p class="cta-text">Попробуйте сервис прямо сейчас — это займет всего 2 минуты</p>
-            <a href="index.html" class="btn-primary" style="display: inline-block; width: auto; padding: 0 48px;">Начать подбор</a>
+            <button class="btn-outline-beige" onclick="window.location.href='index.html?start=true'">Начать подбор</button>
         </div>
 
         <!-- Footer -->
@@ -228,8 +253,10 @@
                         <div class="footer-links-column">
                             <h4>Продукт</h4>
                             <a href="how-it-works.html">Как это работает</a>
-                            <a href="algorithm.html">Алгоритм подбора</a>
-                            <a href="faq.html">FAQ</a>
+                        </div>
+                        <div class="footer-links-column">
+                            <h4>Контакты</h4>
+                            <a href="mailto:hello@skincode.ru">hello@skincode.ru</a>
                         </div>
                     </div>
                 </div>
@@ -263,6 +290,18 @@
         });
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeMenu();
+        });
+
+        // Анимация кнопки меню при скролле
+        window.addEventListener('scroll', () => {
+            const scrollY = window.scrollY;
+            const showThreshold = 100;
+            
+            if (scrollY >= showThreshold) {
+                menuBtn.classList.add('scrolled');
+            } else {
+                menuBtn.classList.remove('scrolled');
+            }
         });
 
         // FAQ Accordion

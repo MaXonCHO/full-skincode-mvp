@@ -1,5 +1,5 @@
 // API клиент для SkinCode backend
-const API_BASE_URL = 'http://localhost:8000';
+const API_BASE_URL = 'https://full-skincode-mvp.onrender.com';
 
 class SkinCodeAPI {
     constructor(baseUrl = API_BASE_URL) {

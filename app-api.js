@@ -521,43 +521,43 @@ function updateFindButton() {
 
 // Поиск совпадений (переход к loading)
 async function findMatches() {
-    goToStep(4);
-    
+    goToStep(3);
+
     // Анимация шагов загрузки
     const loadingSteps = document.querySelectorAll('.loading-step');
     loadingSteps.forEach(step => step.classList.remove('active', 'completed'));
-    
+
     setTimeout(() => {
         loadingSteps[0]?.classList.add('active');
     }, 100);
-    
+
     setTimeout(() => {
         loadingSteps[0]?.classList.remove('active');
         loadingSteps[0]?.classList.add('completed');
     }, 800);
-    
+
     setTimeout(() => {
         loadingSteps[1]?.classList.add('active');
     }, 900);
-    
+
     setTimeout(() => {
         loadingSteps[1]?.classList.remove('active');
         loadingSteps[1]?.classList.add('completed');
     }, 1600);
-    
+
     setTimeout(() => {
         loadingSteps[2]?.classList.add('active');
     }, 1700);
-    
+
     setTimeout(() => {
         loadingSteps[2]?.classList.remove('active');
         loadingSteps[2]?.classList.add('completed');
     }, 2400);
-    
+
     // Переход к результатам
     setTimeout(async () => {
         await generateResults();
-        goToStep(5);
+        goToStep(4);
     }, 2800);
 }
 

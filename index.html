@@ -221,17 +221,15 @@
                     <div class="selectors-panel">
                         <div class="selector-group">
                             <label>Бренд</label>
-                            <select id="brand-select" class="glass-select" onchange="handleBrandChange(this.value)">
+                            <select id="brand-select" class="glass-select">
                                 <option value="">Выбери бренд</option>
-                                <option value="MAC">MAC</option>
-                                <option value="Estée Lauder">Estée Lauder</option>
                             </select>
                         </div>
                         
                         <div class="selector-group">
                             <label>Линейка</label>
                             <div class="native-style-dropdown" id="line-dropdown">
-                                <button class="native-dropdown-btn" id="line-dropdown-btn" disabled onclick="toggleLineDropdown()">
+                                <button class="native-dropdown-btn" id="line-dropdown-btn" disabled>
                                     <span class="selected-text" id="line-selected-text">Сначала выбери бренд</span>
                                     <span class="dropdown-arrow">▼</span>
                                 </button>
@@ -241,12 +239,12 @@
                         
                         <div class="selector-group">
                             <label>Оттенок</label>
-                            <select id="shade-select" class="glass-select" disabled onchange="handleShadeChange(this.value)">
+                            <select id="shade-select" class="glass-select" disabled>
                                 <option value="">Сначала выбери линейку</option>
                             </select>
                         </div>
 
-                        <button class="btn-secondary" id="btn-add" disabled onclick="addProduct()">
+                        <button class="btn-secondary" id="btn-add" disabled>
                             <span>+</span> Добавить
                         </button>
                         
@@ -352,107 +350,6 @@
 
     <script src="api.js"></script>
     <script src="app-api.js"></script>
-    <script>
-        // Функции для кастомного селектора линеек
-        function toggleLineDropdown() {
-            const dropdownList = document.getElementById('line-dropdown-list');
-            const dropdownBtn = document.getElementById('line-dropdown-btn');
-            dropdownList.classList.toggle('show');
-            dropdownBtn.classList.toggle('open');
-        }
-
-        function handleBrandChange(value) {
-            console.log('Бренд:', value);
-            const lineDropdownBtn = document.getElementById('line-dropdown-btn');
-            const lineDropdownList = document.getElementById('line-dropdown-list');
-            const lineSelectedText = document.getElementById('line-selected-text');
-            const shadeSelect = document.getElementById('shade-select');
-            
-            lineDropdownBtn.disabled = !value;
-            shadeSelect.disabled = true;
-            shadeSelect.innerHTML = '<option value="">Сначала выбери линейку</option>';
-            document.getElementById('btn-add').disabled = true;
-            
-            if (value) {
-                // Получаем продукты из API
-                fetchProducts().then(products => {
-                    const brandProducts = products.filter(p => p.brand === value);
-                    const lines = [...new Set(brandProducts.map(p => p.line))];
-                    
-                    lineSelectedText.textContent = 'Выбери линейку';
-                    lineDropdownList.innerHTML = '';
-                    
-                    lines.forEach(line => {
-                        const item = document.createElement('div');
-                        item.className = 'native-dropdown-item';
-                        item.onclick = () => selectLine(line);
-                        item.innerHTML = `<span>${line}</span>`;
-                        lineDropdownList.appendChild(item);
-                    });
-                });
-            } else {
-                lineSelectedText.textContent = 'Сначала выбери бренд';
-                lineDropdownList.innerHTML = '';
-            }
-        }
-
-        function selectLine(line) {
-            console.log('Линейка:', line);
-            const lineSelectedText = document.getElementById('line-selected-text');
-            const lineDropdownList = document.getElementById('line-dropdown-list');
-            const shadeSelect = document.getElementById('shade-select');
-            
-            lineSelectedText.textContent = line;
-            lineDropdownList.classList.remove('show');
-            document.getElementById('line-dropdown-btn').classList.remove('open');
-            
-            shadeSelect.disabled = false;
-            
-            // Получаем продукты из API
-            fetchProducts().then(products => {
-                const selectedBrand = document.getElementById('brand-select').value;
-                const lineProducts = products.filter(p => p.brand === selectedBrand && p.line === line);
-                shadeSelect.innerHTML = '<option value="">Выбери оттенок</option>';
-                lineProducts.forEach(p => {
-                    shadeSelect.innerHTML += `<option value="${p.id}">${p.shade}</option>`;
-                });
-            });
-        }
-
-        function handleShadeChange(value) {
-            console.log('Оттенок:', value);
-            document.getElementById('btn-add').disabled = !value;
-        }
-
-        function addProduct() {
-            console.log('Добавление продукта');
-            const brandSelect = document.getElementById('brand-select');
-            const lineSelectedText = document.getElementById('line-selected-text');
-            const shadeSelect = document.getElementById('shade-select');
-            
-            const brand = brandSelect.value;
-            const line = lineSelectedText.textContent;
-            const shadeId = shadeSelect.value;
-            
-            if (!brand || !line || !shadeId) {
-                alert('Пожалуйста, выберите бренд, линейку и оттенок');
-                return;
-            }
-            
-            // Добавляем продукт через API
-            addProductToState(brand, line, shadeId);
-        }
-
-        // Закрытие dropdown при клике вне его
-        document.addEventListener('click', function(event) {
-            if (!event.target.closest('#line-dropdown-btn') && !event.target.closest('#line-dropdown-list')) {
-                const dropdownList = document.getElementById('line-dropdown-list');
-                const dropdownBtn = document.getElementById('line-dropdown-btn');
-                if (dropdownList) dropdownList.classList.remove('show');
-                if (dropdownBtn) dropdownBtn.classList.remove('open');
-            }
-        });
-    </script>
     
     <!-- Модальное окно подсказки -->
     <div class="help-modal-overlay" id="help-modal-overlay">

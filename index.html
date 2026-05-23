@@ -360,6 +360,7 @@
         // Загрузка продуктов из API
         async function loadProductsFromAPI() {
             try {
+                console.log('Начинаю загрузку продуктов из API...');
                 const response = await fetch('https://full-skincode-mvp-production.up.railway.app/products/?skip=0&limit=1000');
                 const data = await response.json();
                 allProducts = data;
@@ -367,6 +368,7 @@
                 
                 // Заполняем селектор брендов
                 populateBrandSelect();
+                console.log('Селектор брендов заполнен');
             } catch (error) {
                 console.error('Ошибка загрузки продуктов:', error);
             }

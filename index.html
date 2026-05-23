@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тональный Подбор — Найди свой идеальный оттенок</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="styles.css?v=2024042849">
+</head>
+<body>
+    <div class="app">
+        <!-- Кнопка меню -->
+        <button class="menu-btn" id="menu-btn">
+            <span class="menu-btn-lines"></span>
+        </button>
+        
+        <!-- Модальное окно меню -->
+        <div class="menu-modal" id="menu-modal">
+            <div class="menu-content">
+                <button class="menu-close" id="menu-close">×</button>
+                <nav class="menu-nav">
+                    <a href="algorithm.html" class="menu-link">На основе чего происходит подбор</a>
+                    <a href="how-it-works.html" class="menu-link">Как работает подбор</a>
+                    <a href="faq.html" class="menu-link">FAQ</a>
+                    <a href="index.html" class="menu-link menu-link-highlight">Начать подбор</a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- ЭТАП 1: Главный экран -->
+        <section class="step active" id="step-1">
+            <a href="index.html" class="logo-container">
+                <img src="Скинкод%20фотки%20сайт/logo.png" alt="Скинкод" class="logo-img">
+            </a>
+            <div class="hero-image-block">
+                <img src="Скинкод%20фотки%20сайт/hero-block-2.png" alt="Красивая кожа" class="hero-bg-img">
+                <div class="hero-text-overlay">
+                    <h1 class="hero-title">Найди свой идеальный тон</h1>
+                    <p class="hero-tagline">Мы проанализируем твои предпочтения и подберем идеальные оттенки</p>
+                    <button class="btn-primary btn-start hero-start-btn" id="btn-start">Начать подбор</button>
+                </div>
+            </div>
+            <div class="hero-buttons">
+                <button class="btn-outline-black" id="btn-how-it-works">Как это работает?</button>
+            </div>
+
+            <!-- Как это работает -->
+            <section class="how-it-works-new" id="how-it-works">
+                <div class="steps-container">
+                    <div class="step-item-new step-left">
+                        <div class="step-number-new">01</div>
+                        <div class="step-text">
+                            <h3>Расскажи о своей коже</h3>
+                            <p>Выбери свой подтон (теплый, холодный, нейтральный или оливковый) и тип кожи (сухая, жирная, комбинированная или нормальная).</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item-new step-right">
+                        <div class="step-number-new">02</div>
+                        <div class="step-text">
+                            <h3>Добавь свои тональные средства</h3>
+                            <p>Укажи 1–3 тональных крема, которые тебе идеально подходят. Мы проанализируем их оттенки.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item-new step-left">
+                        <div class="step-number-new">03</div>
+                        <div class="step-text">
+                            <h3>Получи рекомендации</h3>
+                            <p>Наша система найдёт похожие оттенки в других брендах и подберет идеальные варианты специально для тебя.</p>
+                        </div>
+                    </div>
+                    
+                    <svg class="arrow-1" viewBox="0 0 300 100" preserveAspectRatio="none">
+                        <path d="M0,50 Q150,20 300,50" fill="none" stroke="#8C6A4E" stroke-width="3" stroke-dasharray="10,10"/>
+                    </svg>
+                    
+                    <svg class="arrow-2" viewBox="0 0 300 100" preserveAspectRatio="none">
+                        <path d="M300,50 Q150,20 0,50" fill="none" stroke="#8C6A4E" stroke-width="3" stroke-dasharray="10,10"/>
+                    </svg>
+                </div>
+            </section>
+        </section>
+
+        <!-- ЭТАП 1.5: Выбор подтона и типа кожи -->
+        <section class="step" id="step-1-5">
+            <div class="glass-card wide">
+                <!-- Прогресс бар со стрелкой назад -->
+                <div class="progress-header">
+                    <button class="btn-back-arrow" id="btn-back-1-5" onclick="document.getElementById('menu-btn').style.display='block'; document.getElementById('step-1-5').classList.remove('active'); document.getElementById('step-1-5').style.display='none'; document.getElementById('step-1').classList.add('active'); document.getElementById('step-1').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">←</button>
+                    <div class="progress-bar">
+                        <div class="progress-step active">1</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">2</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">3</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">4</div>
+                    </div>
+                </div>
+                
+                <h2 class="title" style="font-size: 40px; font-weight: 600; letter-spacing: 0.04em;">Расскажи о своей коже</h2>
+                <p class="subtitle">Это поможет нам точнее подобрать твой идеальный тон</p>
+                
+                <div class="form-group">
+                    <label class="label">Подтон кожи</label>
+                    <div class="options-grid undertone visual">
+                        <button class="option-btn photo-card" data-value="warm" data-type="undertone" onclick="document.querySelectorAll('[data-type=undertone]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                            <div class="photo-wrapper">
+                                <img src="Скинкод%20фотки%20сайт/warm-tone.png" alt="Теплый">
+                                <span class="photo-label">Теплый</span>
+                            </div>
+                        </button>
+                        <button class="option-btn photo-card" data-value="neutral" data-type="undertone" onclick="document.querySelectorAll('[data-type=undertone]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                            <div class="photo-wrapper">
+                                <img src="Скинкод%20фотки%20сайт/neutral-tone.png" alt="Натуральный">
+                                <span class="photo-label">Натуральный</span>
+                            </div>
+                        </button>
+                        <button class="option-btn photo-card" data-value="cool" data-type="undertone" onclick="document.querySelectorAll('[data-type=undertone]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                            <div class="photo-wrapper">
+                                <img src="Скинкод%20фотки%20сайт/cool-tone.png" alt="Холодный">
+                                <span class="photo-label">Холодный</span>
+                            </div>
+                        </button>
+                        <button class="option-btn photo-card" data-value="olive" data-type="undertone" onclick="document.querySelectorAll('[data-type=undertone]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                            <div class="photo-wrapper">
+                                <img src="Скинкод%20фотки%20сайт/olive-tone.png" alt="Оливковый">
+                                <span class="photo-label">Оливковый</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="label">Тип кожи</label>
+                    <div class="options-grid skin-type visual">
+                        <button class="option-btn photo-card" data-value="dry" data-type="skin" onclick="document.querySelectorAll('[data-type=skin]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                            <div class="photo-wrapper">
+                                <img src="Скинкод%20фотки%20сайт/dry-skin.png" alt="Сухая">
+                                <span class="photo-label">Сухая</span>
+                            </div>
+                        </button>
+                        <button class="option-btn photo-card" data-value="oily" data-type="skin" onclick="document.querySelectorAll('[data-type=skin]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                            <div class="photo-wrapper">
+                                <img src="Скинкод%20фотки%20сайт/oily-skin.png" alt="Жирная">
+                                <span class="photo-label">Жирная</span>
+                            </div>
+                        </button>
+                        <button class="option-btn photo-card" data-value="combination" data-type="skin" onclick="document.querySelectorAll('[data-type=skin]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                            <div class="photo-wrapper">
+                                <img src="Скинкод%20фотки%20сайт/combination-skin.png" alt="Комбинированная">
+                                <span class="photo-label">Комбинированная</span>
+                            </div>
+                        </button>
+                        <button class="option-btn photo-card" data-value="normal" data-type="skin" onclick="document.querySelectorAll('[data-type=skin]').forEach(b=>b.classList.remove('selected')); this.classList.add('selected'); document.getElementById('btn-step-1-5').disabled = !(document.querySelector('[data-type=undertone].selected') && document.querySelector('[data-type=skin].selected'));">
+                            <div class="photo-wrapper">
+                                <img src="Скинкод%20фотки%20сайт/normal-skin.png" alt="Нормальная">
+                                <span class="photo-label">Нормальная</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="btn-outline" id="btn-step-1-5" disabled onclick="document.getElementById('menu-btn').style.display='none'; document.getElementById('step-1-5').classList.remove('active'); document.getElementById('step-1-5').style.display='none'; document.getElementById('step-2').classList.add('active'); document.getElementById('step-2').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">Продолжить</button>
+            </div>
+        </section>
+
+        <!-- ЭТАП 2: Добавление продуктов -->
+        <section class="step" id="step-2">
+            <div class="glass-card wide">
+                <!-- Прогресс бар со стрелкой назад -->
+                <div class="progress-header">
+                    <button class="btn-back-arrow" id="btn-back-2" onclick="document.getElementById('menu-btn').style.display='none'; document.getElementById('step-2').classList.remove('active'); document.getElementById('step-2').style.display='none'; document.getElementById('step-1-5').classList.add('active'); document.getElementById('step-1-5').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">←</button>
+                    <div class="progress-bar">
+                        <div class="progress-step completed">1</div>
+                        <div class="progress-line active"></div>
+                        <div class="progress-step active">2</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">3</div>
+                        <div class="progress-line"></div>
+                        <div class="progress-step">4</div>
+                    </div>
+                </div>
+                
+                <h2 class="title" style="font-size: 40px; font-weight: 600; letter-spacing: 0.04em;">Добавь свои тональные средства</h2>
+                <p class="subtitle">Укажи 1–3 продукта, которые тебе идеально подходят</p>
+                
+                <div class="split-layout">
+                    <!-- Левая часть: селекторы -->
+                    <div class="selectors-panel">
+                        <div class="selector-group">
+                            <label>Бренд</label>
+                            <select id="brand-select" class="glass-select">
+                                <option value="">Выбери бренд</option>
+                            </select>
+                        </div>
+                        
+                        <div class="selector-group">
+                            <label>Линейка</label>
+                            <div class="native-style-dropdown" id="line-dropdown">
+                                <button class="native-dropdown-btn" id="line-dropdown-btn" disabled>
+                                    <span class="selected-text" id="line-selected-text">Сначала выбери бренд</span>
+                                    <span class="dropdown-arrow">▼</span>
+                                </button>
+                                <div class="native-dropdown-list" id="line-dropdown-list"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="selector-group">
+                            <label>Оттенок</label>
+                            <select id="shade-select" class="glass-select" disabled>
+                                <option value="">Сначала выбери линейку</option>
+                            </select>
+                        </div>
+
+                        <button class="btn-secondary" id="btn-add" disabled>
+                            <span>+</span> Добавить
+                        </button>
+                        
+                        <p class="hint" id="product-count">Добавлено: 0 из 3</p>
+                    </div>
+
+                    <!-- Правая часть: добавленные продукты -->
+                    <div class="products-panel">
+                        <div class="products-list" id="products-list">
+                            <div class="empty-state">
+                                <img src="Скинкод%20фотки%20сайт/icon.png" alt="Иконка" class="empty-icon-img">
+                                <p>Продукты появятся здесь</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="btn-outline" id="btn-find" disabled>Найти мои мэтчи</button>
+            </div>
+        </section>
+
+        <!-- ЭТАП 3: Loading -->
+        <section class="step" id="step-3">
+            <div class="glass-card center loading-card">
+                <div class="loader-advanced">
+                    <div class="loader-ring ring-1"></div>
+                    <div class="loader-ring ring-2"></div>
+                    <div class="loader-ring ring-3"></div>
+                    <div class="loader-core"></div>
+                </div>
+                <h2 class="loading-text">Анализируем твою кожу...</h2>
+                <div class="loading-steps">
+                    <div class="loading-step" id="step-analyze-1">
+                        <span class="step-dot"></span>
+                        <span class="step-label">Изучаем твои продукты</span>
+                    </div>
+                    <div class="loading-step" id="step-analyze-2">
+                        <span class="step-dot"></span>
+                        <span class="step-label">Сопоставляем оттенки</span>
+                    </div>
+                    <div class="loading-step" id="step-analyze-3">
+                        <span class="step-dot"></span>
+                        <span class="step-label">Подбираем мэтчи</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ЭТАП 4: Результаты -->
+        <section class="step" id="step-4">
+            <div class="glass-card wide">
+                <!-- Прогресс бар со стрелкой назад -->
+                <div class="progress-header">
+                    <button class="btn-back-arrow" id="btn-back-4" onclick="document.getElementById('step-4').classList.remove('active'); document.getElementById('step-4').style.display='none'; document.getElementById('step-2').classList.add('active'); document.getElementById('step-2').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">←</button>
+                    <div class="progress-bar">
+                        <div class="progress-step completed">1</div>
+                        <div class="progress-line active"></div>
+                        <div class="progress-step completed">2</div>
+                        <div class="progress-line active"></div>
+                        <div class="progress-step completed">3</div>
+                        <div class="progress-line active"></div>
+                        <div class="progress-step active">4</div>
+                    </div>
+                </div>
+                
+                <h2 class="title" style="font-size: 40px; font-weight: 600; letter-spacing: 0.04em;">Твои идеальные мэтчи</h2>
+                <p class="subtitle">Топ-5 рекомендаций на основе твоих предпочтений</p>
+                
+                <div class="results-grid" id="results-grid">
+                    <!-- Результаты генерируются JS -->
+                </div>
+
+                <a href="#" onclick="downloadRecommendations(); return false;" style="display: block; text-align: center; margin-top: 24px; color: var(--text-primary); text-decoration: underline; font-size: 14px; opacity: 0.7; transition: opacity 0.3s ease;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">Скачать подборку</a>
+                <button class="btn-outline" id="btn-restart" onclick="location.reload()">Начать заново</button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-main">
+                    <div class="footer-brand-section">
+                        <p class="footer-brand">СКИНКОД</p>
+                        <p class="footer-tagline">Найди свой идеальный тональный крем<br>за 3 простых шага</p>
+                    </div>
+                    <div class="footer-links">
+                        <div class="footer-links-column">
+                            <h4>Продукт</h4>
+                            <a href="#how-it-works">Как это работает</a>
+                            <a href="#algorithm">Алгоритм подбора</a>
+                        </div>
+                        <div class="footer-links-column">
+                            <h4>Контакты</h4>
+                            <a href="mailto:hello@skincode.ru">hello@skincode.ru</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p class="footer-copy"> 2026 Скинкод. Все права защищены.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="api.js"></script>
+    <script src="app-api.js"></script>
+</body>
+</html>

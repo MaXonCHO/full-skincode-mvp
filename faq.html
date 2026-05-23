@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FAQ — Скинкод</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .page-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+        
+        .page-title {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+        
+        .page-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+        
+        .faq-container {
+            max-width: 800px;
+            margin: 0 auto 80px;
+        }
+        
+        .faq-item {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            margin-bottom: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .faq-item:hover {
+            background: rgba(255, 255, 255, 0.8);
+        }
+        
+        .faq-question {
+            padding: 24px 32px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .faq-question::after {
+            content: '+';
+            font-size: 24px;
+            font-weight: 400;
+            transition: transform 0.3s ease;
+        }
+        
+        .faq-item.active .faq-question::after {
+            transform: rotate(45deg);
+        }
+        
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+        
+        .faq-item.active .faq-answer {
+            max-height: 500px;
+        }
+        
+        .faq-answer-content {
+            padding: 0 32px 24px;
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+        
+        .cta-section {
+            text-align: center;
+            padding: 64px 48px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .cta-title {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            letter-spacing: 0.02em;
+        }
+        
+        .cta-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 32px;
+            }
+            
+            .faq-question {
+                padding: 20px 24px;
+                font-size: 16px;
+            }
+            
+            .faq-answer-content {
+                padding: 0 24px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Кнопка меню -->
+        <button class="menu-btn" id="menu-btn">
+            <span class="menu-btn-lines"></span>
+        </button>
+        
+        <!-- Модальное окно меню -->
+        <div class="menu-modal" id="menu-modal">
+            <div class="menu-content">
+                <button class="menu-close" id="menu-close">×</button>
+                <nav class="menu-nav">
+                    <a href="algorithm.html" class="menu-link">На основе чего происходит подбор</a>
+                    <a href="how-it-works.html" class="menu-link">Как работает подбор</a>
+                    <a href="faq.html" class="menu-link">FAQ</a>
+                    <a href="index.html" class="menu-link menu-link-highlight">Начать подбор</a>
+                </nav>
+            </div>
+        </div>
+
+        <a href="index.html" class="logo-container">
+            <img src="Скинкод%20фотки%20сайт/logo.png" alt="Скинкод" class="logo-img">
+        </a>
+
+        <div class="page-header">
+            <h1 class="page-title">FAQ</h1>
+            <p class="page-subtitle">Ответы на часто задаваемые вопросы</p>
+        </div>
+
+        <!-- FAQ -->
+        <div class="faq-container">
+            <div class="faq-item">
+                <div class="faq-question">Как работает подбор?</div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Наш алгоритм анализирует твои текущие тональные средства — бренд, линейку и конкретный оттенок. Затем он сопоставляет характеристики этого оттенка (категорию и подтон) с базой данных других продуктов. В результате ты получаешь список визуально похожих оттенков от разных брендов, которые с высокой вероятностью подойдут тебе так же хорошо, как твои текущие фавориты.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Это бесплатно?</div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Да, наш сервис полностью бесплатный. Мы создали Скинкод, чтобы каждый мог легко найти свой идеальный тональный крем без переплат и неудачных покупок.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Сколько времени занимает подбор?</div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Весь процесс занимает около 2 минут. Тебе нужно ответить на несколько вопросов о твоей коже и ввести данные о тональных средствах, которые тебе подходят. Анализ происходит мгновенно — и сразу видны результаты.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Откуда вы берёте данные о продуктах?</div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Мы собираем информацию из открытых источников: официальные сайты брендов, оттеночные палитры производителей, отзывы пользователей и визуальный анализ цветов. Наша база данных постоянно обновляется, чтобы включать новые продукты и линейки.
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Что если я не знаю свой подтон кожи?</div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Мы поможем определить подтон прямо в процессе подбора. Ты сможешь выбрать из описаний: теплый (золотистый, персиковый), холодный (розовый, голубоватый) или нейтральный. Также можешь ориентироваться на то, какие украшения тебе идут лучше — золото (обычно теплый подтон) или серебро (обычно холодный).
+                    </div>
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question">Могу ли я сохранить результаты?</div>
+                <div class="faq-answer">
+                    <div class="faq-answer-content">
+                        Пока сохранение результатов доступно через стандартные функции браузера — закладки или скриншоты. Мы работаем над добавлением личного кабинета, где можно будет сохранять историю подборов и отмечать понравившиеся продукты.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <h2 class="cta-title">Не нашли ответ на свой вопрос?</h2>
+            <p class="cta-text">Попробуйте сервис прямо сейчас — это займет всего 2 минуты</p>
+            <a href="index.html" class="btn-primary" style="display: inline-block; width: auto; padding: 0 48px;">Начать подбор</a>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-main">
+                    <div class="footer-brand-section">
+                        <p class="footer-brand">СКИНКОД</p>
+                        <p class="footer-tagline">Найди свой идеальный тональный крем<br>за 3 простых шага</p>
+                    </div>
+                    <div class="footer-links">
+                        <div class="footer-links-column">
+                            <h4>Продукт</h4>
+                            <a href="how-it-works.html">Как это работает</a>
+                            <a href="algorithm.html">Алгоритм подбора</a>
+                            <a href="faq.html">FAQ</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p class="footer-copy">© 2026 Скинкод. Все права защищены.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Меню
+        const menuBtn = document.getElementById('menu-btn');
+        const menuModal = document.getElementById('menu-modal');
+        const menuClose = document.getElementById('menu-close');
+
+        function openMenu() {
+            menuModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMenu() {
+            menuModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        menuBtn.addEventListener('click', openMenu);
+        menuClose.addEventListener('click', closeMenu);
+        menuModal.addEventListener('click', (e) => {
+            if (e.target === menuModal) closeMenu();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeMenu();
+        });
+
+        // FAQ Accordion
+        const faqItems = document.querySelectorAll('.faq-item');
+        
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            question.addEventListener('click', () => {
+                const isActive = item.classList.contains('active');
+                
+                // Закрываем все
+                faqItems.forEach(i => i.classList.remove('active'));
+                
+                // Открываем текущий, если он был закрыт
+                if (!isActive) {
+                    item.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

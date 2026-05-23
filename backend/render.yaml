@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: skincode-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        value: sqlite:///./skincode.db
+      - key: PORT
+        value: 8000

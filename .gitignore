@@ -1,0 +1,13 @@
+.DS_Store
+*.log
+node_modules/
+.vscode/
+.idea/
+.vercel
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/*.pyc
+backend/skincode.db
+backend/.env

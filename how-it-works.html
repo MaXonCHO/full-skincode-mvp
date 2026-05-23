@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Как работает подбор — Скинкод</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .page-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+        
+        .page-title {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+        
+        .page-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+        
+        .process-section {
+            margin-bottom: 80px;
+        }
+        
+        .process-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 32px;
+            margin-top: 48px;
+        }
+        
+        .process-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 40px 24px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: all 0.3s ease;
+        }
+        
+        .process-card:hover {
+            transform: translateY(-8px);
+            background: rgba(255, 255, 255, 0.8);
+        }
+        
+        .process-number {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--text-primary);
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+        }
+        
+        .process-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        
+        .process-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        .details-section {
+            margin-bottom: 80px;
+        }
+        
+        .detail-block {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 48px;
+            margin-bottom: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .detail-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            letter-spacing: 0.02em;
+        }
+        
+        .detail-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+        
+        .detail-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0 0;
+        }
+        
+        .detail-list li {
+            padding: 12px 0 12px 32px;
+            position: relative;
+            font-size: 15px;
+            color: var(--text-secondary);
+        }
+        
+        .detail-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+        
+        .cta-section {
+            text-align: center;
+            padding: 64px 48px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .cta-title {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            letter-spacing: 0.02em;
+        }
+        
+        .cta-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+        
+        @media (max-width: 1024px) {
+            .process-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 32px;
+            }
+            
+            .process-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .detail-block {
+                padding: 32px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Кнопка меню -->
+        <button class="menu-btn" id="menu-btn">
+            <span class="menu-btn-lines"></span>
+        </button>
+        
+        <!-- Модальное окно меню -->
+        <div class="menu-modal" id="menu-modal">
+            <div class="menu-content">
+                <button class="menu-close" id="menu-close">×</button>
+                <nav class="menu-nav">
+                    <a href="algorithm.html" class="menu-link">На основе чего происходит подбор</a>
+                    <a href="how-it-works.html" class="menu-link">Как работает подбор</a>
+                    <a href="faq.html" class="menu-link">FAQ</a>
+                    <a href="index.html" class="menu-link menu-link-highlight">Начать подбор</a>
+                </nav>
+            </div>
+        </div>
+
+        <a href="index.html" class="logo-container">
+            <img src="Скинкод%20фотки%20сайт/logo.png" alt="Скинкод" class="logo-img">
+        </a>
+
+        <div class="page-header">
+            <h1 class="page-title">Как работает подбор</h1>
+            <p class="page-subtitle">Простой процесс из 4 шагов к идеальному тону</p>
+        </div>
+
+        <!-- Процесс -->
+        <div class="process-section">
+            <div class="process-grid">
+                <div class="process-card">
+                    <div class="process-number">1</div>
+                    <h3 class="process-title">Определяем кожу</h3>
+                    <p class="process-desc">Уточняем подтон и тип кожи — это ключ к точному совпадению оттенка</p>
+                </div>
+                <div class="process-card">
+                    <div class="process-number">2</div>
+                    <h3 class="process-title">Добавляем продукты</h3>
+                    <p class="process-desc">Вводишь 1-3 тональных средства, которые тебе идеально подходят</p>
+                </div>
+                <div class="process-card">
+                    <div class="process-number">3</div>
+                    <h3 class="process-title">Анализируем</h3>
+                    <p class="process-desc">Наш алгоритм сопоставляет оттенки по категориям и подтону</p>
+                </div>
+                <div class="process-card">
+                    <div class="process-number">4</div>
+                    <h3 class="process-title">Получаешь мэтчи</h3>
+                    <p class="process-desc">Топ-5 рекомендаций с похожими оттенками других брендов</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Детали -->
+        <div class="details-section">
+            <div class="detail-block">
+                <h2 class="detail-title">Почему это работает</h2>
+                <p class="detail-text">
+                    Наш алгоритм анализирует не просто название оттенка, а его характеристики: теплоту, насыщенность, глубину тона. Мы создали систему категорий, которая позволяет находить визуально идентичные оттенки между разными брендами.
+                </p>
+            </div>
+
+            <div class="detail-block">
+                <h2 class="detail-title">Что влияет на результат</h2>
+                <ul class="detail-list">
+                    <li>Подтон кожи (теплый, холодный, нейтральный)</li>
+                    <li>Тип кожи (сухая, жирная, комбинированная, нормальная)</li>
+                    <li>Категория оттенка (светлые, средние, загорелые)</li>
+                    <li>Предпочтения в покрытии и финишу</li>
+                </ul>
+            </div>
+
+            <div class="detail-block">
+                <h2 class="detail-title">Точность подбора</h2>
+                <p class="detail-text">
+                    Алгоритм сопоставляет оттенки в рамках одной категории с учетом подтона. Если у тебя теплый подтон и средний тон кожи, мы покажем только те оттенки, которые визуально совпадают с твоими — не светлее, не темнее, не другого подтона.
+                </p>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <h2 class="cta-title">Готовы найти свой идеальный тон?</h2>
+            <p class="cta-text">Пройдите простой тест за 2 минуты и получите персональные рекомендации</p>
+            <a href="index.html" class="btn-primary" style="display: inline-block; width: auto; padding: 0 48px;">Начать подбор</a>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-main">
+                    <div class="footer-brand-section">
+                        <p class="footer-brand">СКИНКОД</p>
+                        <p class="footer-tagline">Найди свой идеальный тональный крем<br>за 3 простых шага</p>
+                    </div>
+                    <div class="footer-links">
+                        <div class="footer-links-column">
+                            <h4>Продукт</h4>
+                            <a href="how-it-works.html">Как это работает</a>
+                            <a href="algorithm.html">Алгоритм подбора</a>
+                            <a href="faq.html">FAQ</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p class="footer-copy">© 2026 Скинкод. Все права защищены.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Меню
+        const menuBtn = document.getElementById('menu-btn');
+        const menuModal = document.getElementById('menu-modal');
+        const menuClose = document.getElementById('menu-close');
+
+        function openMenu() {
+            menuModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMenu() {
+            menuModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        menuBtn.addEventListener('click', openMenu);
+        menuClose.addEventListener('click', closeMenu);
+        menuModal.addEventListener('click', (e) => {
+            if (e.target === menuModal) closeMenu();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeMenu();
+        });
+    </script>
+</body>
+</html>

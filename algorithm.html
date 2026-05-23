@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Алгоритм подбора — Скинкод</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .page-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+        
+        .page-title {
+            font-size: 48px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 16px;
+        }
+        
+        .page-subtitle {
+            font-size: 18px;
+            color: var(--text-secondary);
+        }
+        
+        .scheme-section {
+            margin-bottom: 80px;
+        }
+        
+        .scheme-container {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 48px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .scheme-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        
+        .scheme-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .scheme-box {
+            background: white;
+            border-radius: 16px;
+            padding: 24px 32px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            min-width: 140px;
+        }
+        
+        .scheme-box-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        
+        .scheme-box-text {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        
+        .scheme-arrow {
+            font-size: 24px;
+            color: var(--text-secondary);
+        }
+        
+        .algorithm-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-bottom: 80px;
+        }
+        
+        .algorithm-card {
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 32px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .algorithm-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--text-primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        .algorithm-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .algorithm-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        
+        .undertone-section {
+            margin-bottom: 80px;
+        }
+        
+        .undertone-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 32px;
+        }
+        
+        .undertone-card {
+            border-radius: 20px;
+            padding: 32px;
+            text-align: center;
+        }
+        
+        .undertone-warm {
+            background: linear-gradient(135deg, #FFF5E6 0%, #FFE4C4 100%);
+            border: 2px solid #FFD699;
+        }
+        
+        .undertone-neutral {
+            background: linear-gradient(135deg, #F5F5F5 0%, #E8E8E8 100%);
+            border: 2px solid #CCCCCC;
+        }
+        
+        .undertone-cool {
+            background: linear-gradient(135deg, #F0F5FF 0%, #E0EBFF 100%);
+            border: 2px solid #B3CCFF;
+        }
+        
+        .undertone-name {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        
+        .undertone-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        
+        .category-section {
+            margin-bottom: 80px;
+        }
+        
+        .category-visual {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 48px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .category-row {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+        
+        .category-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .category-label {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            width: 120px;
+            flex-shrink: 0;
+        }
+        
+        .category-dots {
+            display: flex;
+            gap: 12px;
+            flex: 1;
+        }
+        
+        .category-dot {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .light-dots .category-dot:nth-child(1) { background: #FFF8F0; }
+        .light-dots .category-dot:nth-child(2) { background: #FFE8D6; }
+        .light-dots .category-dot:nth-child(3) { background: #FFD4BA; }
+        .light-dots .category-dot:nth-child(4) { background: #FFC4A3; }
+        
+        .medium-dots .category-dot:nth-child(1) { background: #F5D0C5; }
+        .medium-dots .category-dot:nth-child(2) { background: #E8B4A8; }
+        .medium-dots .category-dot:nth-child(3) { background: #D4A08C; }
+        .medium-dots .category-dot:nth-child(4) { background: #C48A72; }
+        
+        .tan-dots .category-dot:nth-child(1) { background: #B88A6F; }
+        .tan-dots .category-dot:nth-child(2) { background: #A87A5F; }
+        .tan-dots .category-dot:nth-child(3) { background: #8B6B4F; }
+        .tan-dots .category-dot:nth-child(4) { background: #705540; }
+        
+        .deep-dots .category-dot:nth-child(1) { background: #5A4538; }
+        .deep-dots .category-dot:nth-child(2) { background: #453530; }
+        .deep-dots .category-dot:nth-child(3) { background: #362B26; }
+        .deep-dots .category-dot:nth-child(4) { background: #281F1C; }
+        
+        .cta-section {
+            text-align: center;
+            padding: 64px 48px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        
+        .cta-title {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            letter-spacing: 0.02em;
+        }
+        
+        .cta-text {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+        
+        @media (max-width: 1024px) {
+            .algorithm-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .undertone-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .page-title {
+                font-size: 32px;
+            }
+            
+            .algorithm-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .scheme-flow {
+                flex-direction: column;
+            }
+            
+            .scheme-arrow {
+                transform: rotate(90deg);
+            }
+            
+            .category-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .category-dots {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Кнопка меню -->
+        <button class="menu-btn" id="menu-btn">
+            <span class="menu-btn-lines"></span>
+        </button>
+        
+        <!-- Модальное окно меню -->
+        <div class="menu-modal" id="menu-modal">
+            <div class="menu-content">
+                <button class="menu-close" id="menu-close">×</button>
+                <nav class="menu-nav">
+                    <a href="algorithm.html" class="menu-link">На основе чего происходит подбор</a>
+                    <a href="how-it-works.html" class="menu-link">Как работает подбор</a>
+                    <a href="faq.html" class="menu-link">FAQ</a>
+                    <a href="index.html" class="menu-link menu-link-highlight">Начать подбор</a>
+                </nav>
+            </div>
+        </div>
+
+        <a href="index.html" class="logo-container">
+            <img src="Скинкод%20фотки%20сайт/logo.png" alt="Скинкод" class="logo-img">
+        </a>
+
+        <div class="page-header">
+            <h1 class="page-title">Алгоритм подбора</h1>
+            <p class="page-subtitle">Как мы находим идеальные совпадения между брендами</p>
+        </div>
+
+        <!-- Схема работы -->
+        <div class="scheme-section">
+            <div class="scheme-container">
+                <h2 class="scheme-title">Принцип работы алгоритма</h2>
+                <div class="scheme-flow">
+                    <div class="scheme-box">
+                        <div class="scheme-box-icon">🎨</div>
+                        <div class="scheme-box-text">Цвет оттенка</div>
+                    </div>
+                    <div class="scheme-arrow">→</div>
+                    <div class="scheme-box">
+                        <div class="scheme-box-icon">📊</div>
+                        <div class="scheme-box-text">Категория</div>
+                    </div>
+                    <div class="scheme-arrow">→</div>
+                    <div class="scheme-box">
+                        <div class="scheme-box-icon">🔥</div>
+                        <div class="scheme-box-text">Подтон</div>
+                    </div>
+                    <div class="scheme-arrow">→</div>
+                    <div class="scheme-box">
+                        <div class="scheme-box-icon">✨</div>
+                        <div class="scheme-box-text">Мэтчи</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Компоненты алгоритма -->
+        <div class="algorithm-grid">
+            <div class="algorithm-card">
+                <div class="algorithm-icon">🎯</div>
+                <h3 class="algorithm-title">Категоризация оттенков</h3>
+                <p class="algorithm-desc">Все оттенки делятся на категории: Fair, Light, Medium, Tan, Deep. Это позволяет находить визуально похожие тона.</p>
+            </div>
+            <div class="algorithm-card">
+                <div class="algorithm-icon">🌡️</div>
+                <h3 class="algorithm-title">Определение подтона</h3>
+                <p class="algorithm-desc">Теплый, холодный или нейтральный подтон определяет, какой оттенок будет смотреться естественно на коже.</p>
+            </div>
+            <div class="algorithm-card">
+                <div class="algorithm-icon">⚖️</div>
+                <h3 class="algorithm-title">Сопоставление</h3>
+                <p class="algorithm-desc">Алгоритм сравнивает характеристики оттенков в рамках одной категории и с одинаковым подтоном.</p>
+            </div>
+        </div>
+
+        <!-- Подтоны -->
+        <div class="undertone-section">
+            <h2 style="font-size: 28px; font-weight: 600; text-align: center; margin-bottom: 16px;">Три типа подтона</h2>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 32px;">Правильное определение подтона — ключ к идеальному мэтчу</p>
+            <div class="undertone-grid">
+                <div class="undertone-card undertone-warm">
+                    <h3 class="undertone-name" style="color: #CC8800;">Теплый</h3>
+                    <p class="undertone-desc">Золотистый, персиковый оттенок кожи. Удачно смотрятся теплые оттенки с желтым подтоном.</p>
+                </div>
+                <div class="undertone-card undertone-neutral">
+                    <h3 class="undertone-name" style="color: #666;">Нейтральный</h3>
+                    <p class="undertone-desc">Сбалансированный оттенок без явного преобладания теплого или холодного. Подходят универсальные оттенки.</p>
+                </div>
+                <div class="undertone-card undertone-cool">
+                    <h3 class="undertone-name" style="color: #4466CC;">Холодный</h3>
+                    <p class="undertone-desc">Розовый, голубоватый оттенок кожи. Лучше всего смотрятся холодные оттенки с розовым подтоном.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Категории оттенков -->
+        <div class="category-section">
+            <h2 style="font-size: 28px; font-weight: 600; text-align: center; margin-bottom: 16px;">Категории оттенков</h2>
+            <p style="text-align: center; color: var(--text-secondary); margin-bottom: 32px;">От очень светлых до глубоких тонов</p>
+            <div class="category-visual">
+                <div class="category-row">
+                    <div class="category-label">Fair</div>
+                    <div class="category-dots light-dots">
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                    </div>
+                </div>
+                <div class="category-row">
+                    <div class="category-label">Light</div>
+                    <div class="category-dots medium-dots">
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                    </div>
+                </div>
+                <div class="category-row">
+                    <div class="category-label">Medium</div>
+                    <div class="category-dots tan-dots">
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                    </div>
+                </div>
+                <div class="category-row">
+                    <div class="category-label">Deep</div>
+                    <div class="category-dots deep-dots">
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                        <div class="category-dot"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-section">
+            <h2 class="cta-title">Попробуйте алгоритм в действии</h2>
+            <p class="cta-text">Узнайте, какие оттенки подходят именно вам</p>
+            <a href="index.html" class="btn-primary" style="display: inline-block; width: auto; padding: 0 48px;">Начать подбор</a>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-main">
+                    <div class="footer-brand-section">
+                        <p class="footer-brand">СКИНКОД</p>
+                        <p class="footer-tagline">Найди свой идеальный тональный крем<br>за 3 простых шага</p>
+                    </div>
+                    <div class="footer-links">
+                        <div class="footer-links-column">
+                            <h4>Продукт</h4>
+                            <a href="how-it-works.html">Как это работает</a>
+                            <a href="algorithm.html">Алгоритм подбора</a>
+                            <a href="faq.html">FAQ</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="footer-bottom">
+                    <p class="footer-copy">© 2026 Скинкод. Все права защищены.</p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // Меню
+        const menuBtn = document.getElementById('menu-btn');
+        const menuModal = document.getElementById('menu-modal');
+        const menuClose = document.getElementById('menu-close');
+
+        function openMenu() {
+            menuModal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeMenu() {
+            menuModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        menuBtn.addEventListener('click', openMenu);
+        menuClose.addEventListener('click', closeMenu);
+        menuModal.addEventListener('click', (e) => {
+            if (e.target === menuModal) closeMenu();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeMenu();
+        });
+    </script>
+</body>
+</html>

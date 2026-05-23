@@ -591,8 +591,4 @@ async function resetApp() {
 
 // Запуск после загрузки DOM
 console.log('Запуск init() после загрузки DOM');
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
-}
+document.addEventListener('DOMContentLoaded', init);

@@ -28,7 +28,7 @@ def load_csv_to_database(csv_file_path):
                 # Маппинг полей CSV на структуру базы данных
                 product = Product(
                     brand=row.get('brand', ''),
-                    line=row.get('product_type', ''),  # Используем product_type как линейку
+                    line=row.get('name', ''),  # Используем name как линейку
                     shade=row.get('shade_name', ''),
                     hex=row.get('shade_value', '') or '#FFFFFF',  # Заглушка если нет hex
                     image_url='assets/example.png',  # Заглушка для изображений

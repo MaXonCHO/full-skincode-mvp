@@ -1,5 +1,10 @@
 // Состояние приложения с интеграцией backend API
 console.log('app-api.js загружен');
+console.log('API объект существует:', typeof api !== 'undefined');
+
+if (typeof api === 'undefined') {
+    console.error('API объект не найден! Проверьте загрузку api.js');
+}
 
 const state = {
     userId: null,  // ID пользователя из backend
@@ -82,6 +87,11 @@ async function init() {
 // Инициализация пользователя
 async function initUser() {
     try {
+        if (typeof api === 'undefined') {
+            console.error('API объект не найден в initUser()');
+            return;
+        }
+        
         console.log('Начало создания пользователя, anonymousId:', state.anonymousId);
         console.log('API URL:', api.baseUrl);
         

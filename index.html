@@ -223,8 +223,6 @@
                             <label>Бренд</label>
                             <select id="brand-select" class="glass-select" onchange="handleBrandChange(this.value)">
                                 <option value="">Выбери бренд</option>
-                                <option value="MAC">MAC</option>
-                                <option value="Estée Lauder">Estée Lauder</option>
                             </select>
                         </div>
                         
@@ -366,9 +364,25 @@
                 const data = await response.json();
                 allProducts = data;
                 console.log('Загружено продуктов:', allProducts.length);
+                
+                // Заполняем селектор брендов
+                populateBrandSelect();
             } catch (error) {
                 console.error('Ошибка загрузки продуктов:', error);
             }
+        }
+        
+        // Заполнение селектора брендов
+        function populateBrandSelect() {
+            const brandSelect = document.getElementById('brand-select');
+            if (!brandSelect) return;
+            
+            const brands = [...new Set(allProducts.map(p => p.brand))];
+            brandSelect.innerHTML = '<option value="">Выбери бренд</option>';
+            brands.forEach(brand => {
+                brandSelect.innerHTML += `<option value="${brand}">${brand}</option>`;
+            });
+            console.log('Заполнено брендов:', brands.length);
         }
         
         // Загружаем продукты при загрузке страницы

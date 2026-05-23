@@ -157,19 +157,23 @@ function setupEventListeners() {
     });
 
     // Этап 1: как это работает
-    elements.btnHowItWorks.addEventListener('click', () => {
-        document.getElementById('how-it-works').scrollIntoView({ behavior: 'smooth' });
-    });
+    if (elements.btnHowItWorks) {
+        elements.btnHowItWorks.addEventListener('click', () => {
+            document.getElementById('how-it-works').scrollIntoView({ behavior: 'smooth' });
+        });
+    }
 
     // Этап 1: алгоритм
-    elements.btnAlgorithm.addEventListener('click', () => {
-        document.getElementById('algorithm').scrollIntoView({ behavior: 'smooth' });
-    });
+    if (elements.btnAlgorithm) {
+        elements.btnAlgorithm.addEventListener('click', () => {
+            document.getElementById('algorithm').scrollIntoView({ behavior: 'smooth' });
+        });
+    }
 
     // Кнопки «Назад»
-    elements.btnBack1_5.addEventListener('click', () => goToStep(1));
-    elements.btnBack2.addEventListener('click', () => goToStep(2));
-    elements.btnBack4.addEventListener('click', () => goToStep(3));
+    if (elements.btnBack1_5) elements.btnBack1_5.addEventListener('click', () => goToStep(1));
+    if (elements.btnBack2) elements.btnBack2.addEventListener('click', () => goToStep(2));
+    if (elements.btnBack4) elements.btnBack4.addEventListener('click', () => goToStep(3));
 
     // Закрытие меню по Escape
     document.addEventListener('keydown', (e) => {
@@ -191,21 +195,21 @@ function setupEventListeners() {
     });
 
     // Этап 1.5: продолжить
-    elements.btnStep1_5.addEventListener('click', () => goToStep(3));
+    if (elements.btnStep1_5) elements.btnStep1_5.addEventListener('click', () => goToStep(3));
 
     // Этап 2: каскадные селекторы
-    elements.brandSelect.addEventListener('change', onBrandChange);
-    elements.lineDropdownBtn.addEventListener('click', toggleLineDropdown);
-    elements.shadeSelect.addEventListener('change', onShadeChange);
+    if (elements.brandSelect) elements.brandSelect.addEventListener('change', onBrandChange);
+    if (elements.lineDropdownBtn) elements.lineDropdownBtn.addEventListener('click', toggleLineDropdown);
+    if (elements.shadeSelect) elements.shadeSelect.addEventListener('change', onShadeChange);
 
     // Этап 2: добавить продукт
-    elements.btnAdd.addEventListener('click', addProduct);
+    if (elements.btnAdd) elements.btnAdd.addEventListener('click', addProduct);
 
     // Этап 2: найти мэтчи
-    elements.btnFind.addEventListener('click', findMatches);
+    if (elements.btnFind) elements.btnFind.addEventListener('click', findMatches);
 
     // Этап 4: начать заново
-    elements.btnRestart.addEventListener('click', resetApp);
+    if (elements.btnRestart) elements.btnRestart.addEventListener('click', resetApp);
     
     console.log('Обработчики событий настроены');
 }

@@ -82,14 +82,20 @@ async function init() {
 // Инициализация пользователя
 async function initUser() {
     try {
+        console.log('Начало создания пользователя, anonymousId:', state.anonymousId);
+        console.log('API URL:', api.baseUrl);
+        
         // Создаем нового пользователя (для MVP всегда создаем нового)
         const user = await api.createUser(state.anonymousId);
+        console.log('Пользователь создан:', user);
+        
         state.userId = user.id;
         state.anonymousId = user.anonymous_id;
         localStorage.setItem('skincode_anonymous_id', user.anonymous_id);
         console.log('Создан новый пользователь:', state.userId);
     } catch (error) {
         console.error('Ошибка инициализации пользователя:', error);
+        console.error('Детали ошибки:', error.message, error.stack);
     }
 }
 

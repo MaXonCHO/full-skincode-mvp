@@ -40,7 +40,7 @@
                 <div class="hero-text-overlay">
                     <h1 class="hero-title">Найди свой идеальный тон</h1>
                     <p class="hero-tagline">Расскажи немного о своей коже, а мы подберём оттенки, которые подойдут именно тебе</p>
-                    <button class="btn-primary btn-start hero-start-btn" id="btn-start">Начать подбор</button>
+                    <button class="btn-primary btn-start hero-start-btn" id="btn-start" onclick="goToStep(1.5); return false;">Начать подбор</button>
                 </div>
             </div>
             <div class="scroll-indicator">
@@ -78,7 +78,7 @@
                     </div>
                 </div>
                 <div class="how-it-works-cta">
-                    <button class="btn-outline-beige" id="btn-start-from-steps" onclick="document.getElementById('menu-btn').style.display='none'; document.getElementById('step-1').classList.remove('active'); document.getElementById('step-1').style.display='none'; document.getElementById('step-1-5').classList.add('active'); document.getElementById('step-1-5').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">Начать подбор</button>
+                    <button type="button" class="btn-outline-beige" id="btn-start-from-steps" onclick="goToStep(1.5); return false;">Начать подбор</button>
                 </div>
             </section>
 
@@ -111,7 +111,7 @@
             <div class="glass-card wide">
                 <!-- Прогресс бар со стрелкой назад -->
                 <div class="progress-header">
-                    <button class="btn-back-arrow" id="btn-back-1-5" onclick="document.getElementById('menu-btn').style.display=''; document.getElementById('step-1-5').classList.remove('active'); document.getElementById('step-1-5').style.display='none'; document.getElementById('step-1').classList.add('active'); document.getElementById('step-1').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">←</button>
+                    <button type="button" class="btn-back-arrow" id="btn-back-1-5" onclick="goToStep(1); return false;">←</button>
                     <div class="progress-bar">
                         <div class="progress-step active">1</div>
                         <div class="progress-line"></div>
@@ -192,7 +192,7 @@
                     </div>
                 </div>
 
-                <button type="button" class="btn-outline" id="btn-step-1-5" disabled>Продолжить</button>
+                <button type="button" class="btn-outline" id="btn-step-1-5" disabled onclick="goToStep(2); return false;">Продолжить</button>
             </div>
         </section>
 
@@ -201,7 +201,7 @@
             <div class="glass-card wide">
                 <!-- Прогресс бар со стрелкой назад -->
                 <div class="progress-header">
-                    <button class="btn-back-arrow" id="btn-back-2" onclick="document.getElementById('menu-btn').style.display='none'; document.getElementById('step-2').classList.remove('active'); document.getElementById('step-2').style.display='none'; document.getElementById('step-1-5').classList.add('active'); document.getElementById('step-1-5').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">←</button>
+                    <button type="button" class="btn-back-arrow" id="btn-back-2" onclick="goToStep(1.5); return false;">←</button>
                     <div class="progress-bar">
                         <div class="progress-step completed">1</div>
                         <div class="progress-line active"></div>
@@ -298,7 +298,7 @@
             <div class="glass-card wide">
                 <!-- Прогресс бар со стрелкой назад -->
                 <div class="progress-header">
-                    <button class="btn-back-arrow" id="btn-back-4" onclick="document.getElementById('step-4').classList.remove('active'); document.getElementById('step-4').style.display='none'; document.getElementById('step-2').classList.add('active'); document.getElementById('step-2').style.display='block'; window.scrollTo({top:0, behavior:'smooth'});">←</button>
+                    <button type="button" class="btn-back-arrow" id="btn-back-4" onclick="goToStep(2); return false;">←</button>
                     <div class="progress-bar">
                         <div class="progress-step completed">1</div>
                         <div class="progress-line active"></div>

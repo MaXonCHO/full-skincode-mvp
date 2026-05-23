@@ -13,6 +13,8 @@ function fixProductImage(url) {
     return url;
 }
 
+const WIZARD_STEP_IDS = ['step-1', 'step-1-5', 'step-2', 'step-3', 'step-4'];
+
 const state = {
     userId: null,  // ID пользователя из backend
     anonymousId: localStorage.getItem('skincode_anonymous_id') || null,
@@ -84,6 +86,8 @@ async function init() {
         console.log('Начало setupEventListeners()');
         // Настраиваем обработчики событий
         setupEventListeners();
+        initWizardSteps();
+        handleStartQueryParam();
         console.log('setupEventListeners() завершен');
         
         console.log('Инициализация завершена');
@@ -150,26 +154,6 @@ function setupEventListeners() {
         if (e.target === elements.menuModal) closeMenu();
     });
     
-    // Этап 1: начать подбор
-    elements.btnStart.addEventListener('click', () => {
-        console.log('Кнопка "Начать подбор" нажата');
-        const menuBtn = document.getElementById('menu-btn');
-        if (menuBtn) menuBtn.style.display = 'none';
-        
-        const step1 = document.getElementById('step-1');
-        if (step1) {
-            step1.classList.remove('active');
-            step1.style.display = 'none';
-        }
-        
-        const step1_5 = document.getElementById('step-1-5');
-        if (step1_5) {
-            step1_5.classList.add('active');
-            step1_5.style.display = 'block';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    });
-
     // Этап 1: как это работает
     if (elements.btnHowItWorks) {
         elements.btnHowItWorks.addEventListener('click', () => {
@@ -183,11 +167,6 @@ function setupEventListeners() {
             document.getElementById('algorithm').scrollIntoView({ behavior: 'smooth' });
         });
     }
-
-    // Кнопки «Назад»
-    if (elements.btnBack1_5) elements.btnBack1_5.addEventListener('click', () => goToStep(1));
-    if (elements.btnBack2) elements.btnBack2.addEventListener('click', () => goToStep(2));
-    if (elements.btnBack4) elements.btnBack4.addEventListener('click', () => goToStep(3));
 
     // Закрытие меню по Escape
     document.addEventListener('keydown', (e) => {
@@ -208,9 +187,6 @@ function setupEventListeners() {
         });
     });
 
-    // Этап 1.5: продолжить
-    if (elements.btnStep1_5) elements.btnStep1_5.addEventListener('click', () => goToStep(2));
-
     // Этап 2: каскадные селекторы
     if (elements.brandSelect) elements.brandSelect.addEventListener('change', onBrandChange);
     if (elements.lineDropdownBtn) elements.lineDropdownBtn.addEventListener('click', toggleLineDropdown);
@@ -221,11 +197,6 @@ function setupEventListeners() {
 
     // Этап 2: найти мэтчи
     if (elements.btnFind) elements.btnFind.addEventListener('click', findMatches);
-
-    // Кнопки "Назад"
-    if (elements.btnBack1_5) elements.btnBack1_5.addEventListener('click', () => goToStep(1));
-    if (elements.btnBack2) elements.btnBack2.addEventListener('click', () => goToStep(1.5));
-    if (elements.btnBack4) elements.btnBack4.addEventListener('click', () => goToStep(2));
 
     // Этап 4: скачать подборку
     if (elements.btnDownload) elements.btnDownload.addEventListener('click', downloadRecommendations);
@@ -324,17 +295,22 @@ function updateProgressBar(currentStep) {
     });
 }
 
-// Переход между этапами
+function initWizardSteps() {
+    WIZARD_STEP_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('active', id === 'step-1');
+    });
+}
+
+// Переход между этапами — всегда один экран виден
 function goToStep(stepNum) {
-    elements.steps.forEach((step) => {
-        step.classList.remove('active');
+    WIZARD_STEP_IDS.forEach((id) => {
+        document.getElementById(id)?.classList.remove('active');
     });
 
     const stepId = stepNum === 1.5 ? 'step-1-5' : `step-${stepNum}`;
-    const targetStep = document.getElementById(stepId);
-    if (targetStep) {
-        targetStep.classList.add('active');
-    }
+    document.getElementById(stepId)?.classList.add('active');
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -583,7 +559,9 @@ async function generateResults() {
         console.log('Рекомендации:', recommendations);
         
         if (!recommendations.length) {
-            elements.resultsGrid.innerHTML = '<p class="subtitle">Пока недостаточно данных для точного мэтча. Добавь ещё один знакомый тональник или попробуй позже.</p>';
+            elements.resultsGrid.innerHTML = `
+                <p class="subtitle">Пока нет мэтчей от других пользователей с похожими тоналками.</p>
+                <p class="subtitle" style="margin-top:12px;opacity:0.85;">Твой выбор уже сохранён в базе — рекомендации появятся, когда накопится больше данных от сообщества.</p>`;
             window.currentRecommendations = [];
             return;
         }
@@ -727,6 +705,7 @@ async function resetApp() {
     goToStep(1);
 }
 
+window.goToStep = goToStep;
 window.toggleLineDropdown = toggleLineDropdown;
 window.showHelpModal = showHelpModal;
 window.closeHelpModal = closeHelpModal;
@@ -736,7 +715,6 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
     animateTrustNumbers();
     initScrollAnimations();
-    handleStartQueryParam();
 });
 
 function animateTrustNumbers() {
@@ -782,10 +760,6 @@ function initScrollAnimations() {
 function handleStartQueryParam() {
     const params = new URLSearchParams(window.location.search);
     if (params.get('start') !== 'true') return;
-    document.getElementById('menu-btn').style.display = 'none';
-    document.getElementById('step-1')?.classList.remove('active');
-    if (document.getElementById('step-1')) document.getElementById('step-1').style.display = 'none';
-    document.getElementById('step-1-5')?.classList.add('active');
-    if (document.getElementById('step-1-5')) document.getElementById('step-1-5').style.display = 'block';
+    goToStep(1.5);
     window.history.replaceState({}, document.title, window.location.pathname);
 }

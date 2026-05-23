@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import text, func
+from sqlalchemy import text
 from models import User, Product, UserProduct, ProductCoOccurrence, Recommendation
-from typing import List, Dict, Optional, Set
+from typing import List, Dict, Optional
 
 
 class RecommendationEngine:
@@ -31,8 +31,8 @@ class RecommendationEngine:
         similar_user_ids = self._find_similar_users(product_ids, user_id)
         candidate_product_ids = self._get_candidate_products(product_ids, similar_user_ids)
 
-        if not candidate_product_ids:
-            return self._cold_start_fallback(product_ids, undertone, skin_type, top_k)
+        if not similar_user_ids or not candidate_product_ids:
+            return []
 
         scored_products = self._score_products(
             candidate_product_ids,
@@ -175,68 +175,6 @@ class RecommendationEngine:
         parts = product.category.split("_")
         product_undertone = parts[-1] if parts else None
         return 1.0 if product_undertone == user_undertone else 0.0
-
-    def _cold_start_fallback(
-        self,
-        user_product_ids: List[int],
-        undertone: Optional[str],
-        skin_type: Optional[str],
-        top_k: int,
-    ) -> List[Dict]:
-        """Популярные продукты + совпадение category, когда мало пользовательских данных."""
-        popular = (
-            self.db.query(
-                UserProduct.product_id,
-                func.count(UserProduct.id).label("cnt"),
-            )
-            .filter(~UserProduct.product_id.in_(user_product_ids))
-            .group_by(UserProduct.product_id)
-            .order_by(func.count(UserProduct.id).desc())
-            .limit(top_k * 3)
-            .all()
-        )
-
-        candidates: List[int] = [row[0] for row in popular]
-
-        if len(candidates) < top_k:
-            query = self.db.query(Product.id).filter(~Product.id.in_(user_product_ids))
-            if undertone:
-                query = query.filter(Product.category.ilike(f"%_{undertone}"))
-            extra = [row[0] for row in query.limit(top_k * 2).all()]
-            seen: Set[int] = set(candidates)
-            for pid in extra:
-                if pid not in seen:
-                    candidates.append(pid)
-                    seen.add(pid)
-
-        if not candidates:
-            fallback = (
-                self.db.query(Product.id)
-                .filter(~Product.id.in_(user_product_ids))
-                .limit(top_k)
-                .all()
-            )
-            candidates = [row[0] for row in fallback]
-
-        scored = []
-        for rank, product_id in enumerate(candidates[: top_k * 2]):
-            product = self.db.query(Product).filter(Product.id == product_id).first()
-            if not product:
-                continue
-            undertone_bonus = self._product_undertone_bonus(product, undertone)
-            score = 10.0 + undertone_bonus * 20.0 - rank * 0.1
-            scored.append(
-                {
-                    "product_id": product_id,
-                    "score": score,
-                    "co_occurrence_score": 0.0,
-                    "undertone_match_score": undertone_bonus,
-                    "skin_type_match_score": 0.0,
-                }
-            )
-
-        scored.sort(key=lambda x: x["score"], reverse=True)
-        return scored[:top_k]
 
     def update_co_occurrence_matrix(self) -> None:
         results = self.db.execute(

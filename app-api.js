@@ -1,6 +1,5 @@
 // Состояние приложения с интеграцией backend API
 console.log('app-api.js загружен');
-console.log('DOM готов:', document.readyState);
 
 const state = {
     userId: null,  // ID пользователя из backend
@@ -46,6 +45,7 @@ const elements = {
 // Инициализация
 async function init() {
     console.log('Инициализация приложения...');
+    console.log('DOM готов при выполнении init():', document.readyState);
     console.log('DOM элементы:', {
         btnStart: elements.btnStart,
         undertoneBtns: elements.undertoneBtns.length,

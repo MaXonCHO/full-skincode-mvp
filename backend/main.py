@@ -44,7 +44,7 @@ def health_check():
 
 
 # Initialize database with products
-@app.post("/init-db")
+@app.get("/init-db")
 def init_db_endpoint():
     """Инициализирует базу данных начальными данными продуктов."""
     try:

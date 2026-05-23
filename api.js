@@ -1,5 +1,5 @@
 // API клиент для SkinCode backend
-const API_BASE_URL = 'https://full-skincode-mvp.onrender.com';
+const API_BASE_URL = 'https://full-skincode-mvp-production.up.railway.app';
 
 class SkinCodeAPI {
     constructor(baseUrl = API_BASE_URL) {

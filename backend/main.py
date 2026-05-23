@@ -76,6 +76,64 @@ def load_csv_endpoint():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Load products directly from CSV data
+@app.post("/load-products")
+def load_products_endpoint(products_data: List[dict]):
+    """Загружает продукты напрямую из данных в базу данных."""
+    db = SessionLocal()
+    try:
+        # Очищаем существующие продукты
+        db.query(Product).delete()
+        db.commit()
+
+        # Генерируем URL изображения на основе бренда
+        image_mapping = {
+            'MAC': 'assets/product-1.png',
+            'Estée Lauder': 'assets/product-2.png',
+            'Dior': 'assets/product-3.png',
+            'NARS': 'assets/product-4.png',
+            'Fenty Beauty': 'assets/product-5.png',
+            'Lancôme': 'assets/product-1.png',
+            'YSL Beauty': 'assets/product-2.png',
+            'Clinique': 'assets/product-3.png',
+            'Clarins': 'assets/product-4.png',
+            'Shiseido': 'assets/product-5.png',
+            'Kevyn Aucoin': 'assets/product-1.png',
+            'SCINIC': 'assets/product-2.png',
+            'Cellcosmet & Cellmen': 'assets/product-3.png'
+        }
+
+        products_count = 0
+        for row in products_data:
+            brand = row.get('brand', '')
+            line = row.get('name', '')
+            shade = row.get('shade_value', '')
+
+            image_url = image_mapping.get(brand, 'assets/example.png')
+
+            product = Product(
+                brand=brand,
+                line=line,
+                shade=shade,
+                hex=shade or '#FFFFFF',
+                image_url=image_url,
+                product_url=row.get('product_url', ''),
+                price=float(row.get('price_actual', 0)) if row.get('price_actual') else 0,
+                category='neutral'
+            )
+
+            db.add(product)
+            products_count += 1
+
+        db.commit()
+        return {"status": "success", "message": f"Loaded {products_count} products"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        db.close()
+
+
 # Check if CSV file exists
 @app.get("/check-csv")
 def check_csv_endpoint():

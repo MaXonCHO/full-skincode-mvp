@@ -589,6 +589,10 @@ async function resetApp() {
     goToStep(1);
 }
 
-// Запуск
-console.log('Запуск init()');
-init();
+// Запуск после загрузки DOM
+console.log('Запуск init() после загрузки DOM');
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

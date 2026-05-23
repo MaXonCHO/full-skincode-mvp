@@ -21,6 +21,7 @@ from crud import (
 )
 from recommendation_engine import RecommendationEngine
 from init_db import init_database
+from load_csv import load_csv_to_database
 
 # Создаем таблицы
 Base.metadata.create_all(bind=engine)
@@ -50,6 +51,18 @@ def init_db_endpoint():
     try:
         init_database()
         return {"status": "success", "message": "Database initialized with products"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Load CSV data to database
+@app.get("/load-csv")
+def load_csv_endpoint():
+    """Загружает данные из CSV файла в базу данных."""
+    try:
+        csv_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'results — копия 2.csv')
+        load_csv_to_database(csv_path)
+        return {"status": "success", "message": "CSV data loaded to database"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

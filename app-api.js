@@ -326,10 +326,6 @@ function goToStep(stepNum) {
     }
 
     updateProgressBar(stepNum);
-
-    if (stepNum === 4) {
-        generateResults();
-    }
 }
 
 // Обработчик смены бренда

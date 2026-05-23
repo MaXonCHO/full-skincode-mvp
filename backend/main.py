@@ -69,6 +69,22 @@ def load_csv_endpoint():
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# Check if CSV file exists
+@app.get("/check-csv")
+def check_csv_endpoint():
+    """Проверяет существование CSV файла."""
+    try:
+        csv_path = os.path.join(os.path.dirname(__file__), 'products.csv')
+        exists = os.path.exists(csv_path)
+        if exists:
+            size = os.path.getsize(csv_path)
+            return {"status": "success", "exists": True, "size": size, "path": csv_path}
+        else:
+            return {"status": "error", "exists": False, "path": csv_path}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ===== USER ENDPOINTS =====
 
 @app.post("/users/", response_model=UserResponse)

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import uuid
+import os
 
 from database import get_db, engine, Base
 from models import User, Product, UserProduct, Recommendation

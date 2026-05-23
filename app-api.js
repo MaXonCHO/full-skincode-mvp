@@ -53,17 +53,25 @@ async function init() {
     });
     
     try {
+        console.log('Начало initUser()');
         // Создаем или получаем пользователя
         await initUser();
+        console.log('initUser() завершен');
         
+        console.log('Начало loadProductsData()');
         // Загружаем данные продуктов
         await loadProductsData();
+        console.log('loadProductsData() завершен');
         
+        console.log('Начало populateBrandSelect()');
         // Заполняем селекторы
         populateBrandSelect();
+        console.log('populateBrandSelect() завершен');
         
+        console.log('Начало setupEventListeners()');
         // Настраиваем обработчики событий
         setupEventListeners();
+        console.log('setupEventListeners() завершен');
         
         console.log('Инициализация завершена');
     } catch (error) {

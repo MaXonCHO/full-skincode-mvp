@@ -196,7 +196,7 @@ function setupEventListeners() {
     });
 
     // Этап 1.5: продолжить
-    if (elements.btnStep1_5) elements.btnStep1_5.addEventListener('click', () => goToStep(3));
+    if (elements.btnStep1_5) elements.btnStep1_5.addEventListener('click', () => goToStep(2));
 
     // Этап 2: каскадные селекторы
     if (elements.brandSelect) elements.brandSelect.addEventListener('change', onBrandChange);

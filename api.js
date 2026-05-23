@@ -17,7 +17,16 @@ class SkinCodeAPI {
         };
 
         try {
-            const response = await fetch(url, config);
+            // Добавляем timeout 10 секунд
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            
+            const response = await fetch(url, {
+                ...config,
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
             
             if (!response.ok) {
                 throw new Error(`API Error: ${response.status} ${response.statusText}`);
@@ -26,6 +35,9 @@ class SkinCodeAPI {
             return await response.json();
         } catch (error) {
             console.error('API request failed:', error);
+            if (error.name === 'AbortError') {
+                throw new Error('API request timeout (10s)');
+            }
             throw error;
         }
     }

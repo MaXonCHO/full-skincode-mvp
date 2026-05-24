@@ -12,10 +12,15 @@ from models import User, Product, UserProduct, Recommendation
 from schemas import (
     UserCreate, UserResponse,
     ProductCreate, ProductResponse,
-    UserProductCreate, UserProductResponse, UserProductAddedResponse,
+    UserProductCreate, UserProductResponse,
     RecommendationRequest, RecommendationResponse,
     SearchRequest, SearchResponse
 )
+
+try:  # Railway/Render могут использовать старую версию schemas во время деплоя
+    from schemas import UserProductAddedResponse
+except ImportError:
+    UserProductAddedResponse = UserProductResponse
 from crud import (
     get_user, get_user_by_anonymous_id, create_user, update_user,
     get_products, get_product, get_products_by_brand, get_products_by_brand_and_line,

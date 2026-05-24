@@ -367,7 +367,10 @@ def get_recommendations_endpoint(request: RecommendationRequest, db: Session = D
                 product_id=product.id,
                 score=rec_data['score'],
                 rank=rank,
-                product=product
+                product=product,
+                support_count=rec_data.get('support_count'),
+                confidence_label=rec_data.get('confidence_label'),
+                match_ratio=rec_data.get('match_ratio'),
             ))
     
     return recommendations

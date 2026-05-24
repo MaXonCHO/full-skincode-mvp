@@ -2048,6 +2048,12 @@ margin-bottom: 4px;
     font-weight: 700;
 }
 
+.result-confidence {
+    margin-top: 8px;
+    font-size: 13px;
+    color: rgba(15, 15, 15, 0.7);
+}
+
 /* Кнопка Купить в результатах */
 .btn-buy {
     width: 100%;

@@ -69,6 +69,17 @@ class UserProductResponse(BaseModel):
         from_attributes = True
 
 
+class UserProductAddedResponse(BaseModel):
+    """Ответ после добавления продукта (без вложенного product — меньше ошибок сериализации)."""
+    id: int
+    user_id: int
+    product_id: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
 # Recommendation schemas
 class RecommendationRequest(BaseModel):
     user_id: int
@@ -83,6 +94,9 @@ class RecommendationResponse(BaseModel):
     score: float
     rank: int
     product: ProductResponse
+    support_count: Optional[int] = None
+    confidence_label: Optional[str] = None
+    match_ratio: Optional[float] = None
     
     class Config:
         from_attributes = True

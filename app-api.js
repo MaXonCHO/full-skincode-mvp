@@ -13,6 +13,27 @@ function fixProductImage(url) {
     return url;
 }
 
+function formatConfidenceLabel(rec) {
+    if (!rec) return '';
+    const parts = [];
+    if (rec.confidence_label) {
+        parts.push(rec.confidence_label);
+    }
+    if (typeof rec.support_count === 'number' && rec.support_count > 0) {
+        parts.push(`${rec.support_count} ${pluralize(rec.support_count, ['связка', 'связки', 'связок'])}`);
+    }
+    return parts.join(' · ');
+}
+
+function pluralize(value, forms) {
+    const absValue = Math.abs(value) % 100;
+    const lastDigit = absValue % 10;
+    if (absValue > 10 && absValue < 20) return forms[2];
+    if (lastDigit > 1 && lastDigit < 5) return forms[1];
+    if (lastDigit === 1) return forms[0];
+    return forms[2];
+}
+
 const WIZARD_STEP_IDS = ['step-1', 'step-1-5', 'step-2', 'step-3', 'step-4'];
 
 const state = {
@@ -595,6 +616,7 @@ async function generateResults() {
         elements.resultsGrid.innerHTML = recommendations.map((rec, idx) => {
             const img = fixProductImage(rec.product.image_url);
             const url = rec.product.product_url || '#';
+            const confidenceText = formatConfidenceLabel(rec);
             return `
             <div class="result-card">
                 <div class="result-rank">${idx + 1}</div>
@@ -605,6 +627,7 @@ async function generateResults() {
                 <div class="result-line">${rec.product.line}</div>
                 <div class="result-shade">${rec.product.shade}</div>
                 ${rec.product.price ? `<div class="result-price">${Math.round(rec.product.price)} ₽</div>` : ''}
+                ${confidenceText ? `<div class="result-confidence">${confidenceText}</div>` : ''}
                 <button class="btn-buy" type="button" data-url="${url.replace(/"/g, '&quot;')}">Купить</button>
             </div>`;
         }).join('');
@@ -623,6 +646,7 @@ async function generateResults() {
             image: fixProductImage(rec.product.image_url),
             price: rec.product.price ? Math.round(rec.product.price) : null,
             url: rec.product.product_url || '#',
+            confidence: formatConfidenceLabel(rec),
         }));
     } catch (error) {
         console.error('Ошибка генерации рекомендаций:', error);
@@ -653,6 +677,7 @@ async function downloadRecommendations() {
                     <div style="font-weight:600;">${prod.brand} — ${prod.line}</div>
                     <div>Оттенок: ${prod.shade}</div>
                     ${prod.price ? `<div>Цена: ${prod.price} ₽</div>` : ''}
+                    ${prod.confidence ? `<div style="font-size:12px;color:#666;margin-top:4px;">${prod.confidence}</div>` : ''}
                 </div>
             </div>`;
     });

@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text, func
 from models import User, Product, UserProduct, ProductCoOccurrence, Recommendation
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 
 
 class RecommendationEngine:
@@ -10,7 +10,7 @@ class RecommendationEngine:
     Collaborative filtering + co-occurrence + weighted scoring.
     """
 
-    CO_OCCURRENCE_WEIGHT = 1.0
+    SESSION_SUPPORT_WEIGHT = 5.0
     UNDERTONE_MATCH_WEIGHT = 40.0
     SKIN_TYPE_MATCH_WEIGHT = 30.0
 
@@ -29,26 +29,26 @@ class RecommendationEngine:
             return []
 
         # Находим сессии (user_id, session_id), которые содержат ВСЕ введённые продукты
-        session_pairs = self._find_similar_sessions(product_ids, user_id)
-        if not session_pairs:
-            session_pairs = self._find_overlapping_sessions(
+        session_matches = self._find_similar_sessions(product_ids, user_id)
+        if not session_matches:
+            session_matches = self._find_overlapping_sessions(
                 product_ids,
                 undertone,
                 skin_type,
                 user_id,
             )
-        if not session_pairs:
+        if not session_matches:
             return []
 
         # Кандидаты — только продукты из ТЕХ ЖЕ сессий, не входящие в ввод пользователя
-        candidate_product_ids = self._get_candidates_from_sessions(product_ids, session_pairs)
-        if not candidate_product_ids:
+        candidates = self._get_candidates_from_sessions(product_ids, session_matches)
+        if not candidates:
             return []
 
-        similar_user_ids = list({uid for uid, _ in session_pairs})
+        similar_user_ids = list({match["user_id"] for match in session_matches})
 
         scored_products = self._score_products(
-            candidate_product_ids,
+            candidates,
             product_ids,
             undertone,
             skin_type,
@@ -62,7 +62,7 @@ class RecommendationEngine:
         self,
         product_ids: List[int],
         exclude_user_id: Optional[int] = None,
-    ) -> List[tuple]:
+    ) -> List[Dict[str, Any]]:
         """
         Возвращает список (user_id, session_id), где сессия содержит ровно все product_ids.
         Только сессии с session_id != NULL (связки, отправленные через /recommendations/).
@@ -88,11 +88,17 @@ class RecommendationEngine:
 
         rows = query.group_by(UserProduct.user_id, UserProduct.session_id).all()
 
-        return [
-            (uid, sid)
-            for uid, sid, cnt in rows
-            if cnt == required
-        ]
+        matches: List[Dict[str, Any]] = []
+        for uid, sid, cnt in rows:
+            if cnt == required:
+                matches.append({
+                    "user_id": uid,
+                    "session_id": sid,
+                    "match_ratio": 1.0,
+                    "overlap_count": cnt,
+                    "match_type": "exact",
+                })
+        return matches
 
     def _find_overlapping_sessions(
         self,
@@ -101,7 +107,7 @@ class RecommendationEngine:
         skin_type: Optional[str],
         exclude_user_id: Optional[int] = None,
         min_overlap: int = 1,
-    ) -> List[tuple]:
+    ) -> List[Dict[str, Any]]:
         """
         Если нет точного совпадения связки, ищем сессии с пересечением.
         Требуем совпадение по подтону/типу кожи (если заданы) и минимум min_overlap общих продуктов.
@@ -109,6 +115,8 @@ class RecommendationEngine:
         unique_ids = list({pid for pid in product_ids if pid})
         if not unique_ids:
             return []
+
+        min_required_overlap = max(min_overlap, len(unique_ids) - 1 if len(unique_ids) > 1 else 1)
 
         query = (
             self.db.query(
@@ -131,26 +139,36 @@ class RecommendationEngine:
             query = query.filter(User.skin_type == skin_type)
 
         query = query.group_by(UserProduct.user_id, UserProduct.session_id)
-        rows = query.having(func.count(func.distinct(UserProduct.product_id)) >= min_overlap).all()
+        rows = query.having(func.count(func.distinct(UserProduct.product_id)) >= min_required_overlap).all()
 
-        return [(uid, sid) for uid, sid, _ in rows]
+        matches: List[Dict[str, Any]] = []
+        for uid, sid, overlap_count in rows:
+            matches.append({
+                "user_id": uid,
+                "session_id": sid,
+                "match_ratio": min(1.0, overlap_count / max(1, len(unique_ids))),
+                "overlap_count": overlap_count,
+                "match_type": "partial",
+            })
+        return matches
 
     def _get_candidates_from_sessions(
         self,
         user_product_ids: List[int],
-        session_pairs: List[tuple],
-    ) -> List[int]:
+        session_matches: List[Dict[str, Any]],
+    ) -> Dict[int, Dict[str, Any]]:
         """
         Возвращает продукты из конкретных сессий, исключая уже введённые продукты.
         Продукты из других сессий этого же пользователя НЕ попадают.
         """
-        if not session_pairs:
-            return []
+        if not session_matches:
+            return {}
 
-        seen: set = set()
-        result: List[int] = []
+        result: Dict[int, Dict[str, Any]] = {}
 
-        for uid, sid in session_pairs:
+        for match in session_matches:
+            uid = match["user_id"]
+            sid = match["session_id"]
             rows = (
                 self.db.query(UserProduct.product_id)
                 .filter(
@@ -162,15 +180,20 @@ class RecommendationEngine:
                 .all()
             )
             for (pid,) in rows:
-                if pid not in seen:
-                    seen.add(pid)
-                    result.append(pid)
+                data = result.setdefault(pid, {
+                    "support": 0,
+                    "weighted_support": 0.0,
+                    "max_ratio": 0.0,
+                })
+                data["support"] += 1
+                data["weighted_support"] += match["match_ratio"]
+                data["max_ratio"] = max(data["max_ratio"], match["match_ratio"])
 
         return result
 
     def _score_products(
         self,
-        candidate_product_ids: List[int],
+        candidates: Dict[int, Dict[str, Any]],
         user_product_ids: List[int],
         undertone: str,
         skin_type: str,
@@ -178,12 +201,12 @@ class RecommendationEngine:
     ) -> List[Dict]:
         scored_products = []
 
-        for product_id in candidate_product_ids:
+        for product_id, stats in candidates.items():
             product = self.db.query(Product).filter(Product.id == product_id).first()
             if not product:
                 continue
 
-            co_count = self._co_occurrence_count(product_id, similar_user_ids)
+            co_count = stats["weighted_support"]
             undertone_match = self._match_flag_from_similar_users(
                 product_id, similar_user_ids, "undertone", undertone
             )
@@ -194,7 +217,7 @@ class RecommendationEngine:
             product_undertone_bonus = self._product_undertone_bonus(product, undertone)
 
             total_score = (
-                co_count * self.CO_OCCURRENCE_WEIGHT
+                co_count * self.SESSION_SUPPORT_WEIGHT
                 + undertone_match * self.UNDERTONE_MATCH_WEIGHT
                 + skin_match * self.SKIN_TYPE_MATCH_WEIGHT
                 + product_undertone_bonus * self.UNDERTONE_MATCH_WEIGHT * 0.25
@@ -207,22 +230,23 @@ class RecommendationEngine:
                     "co_occurrence_score": float(co_count),
                     "undertone_match_score": float(undertone_match + product_undertone_bonus * 0.25),
                     "skin_type_match_score": float(skin_match),
+                    "support_count": stats["support"],
+                    "match_ratio": stats["max_ratio"],
+                    "confidence_label": self._confidence_label(stats["max_ratio"], stats["support"]),
                 }
             )
 
         return scored_products
 
-    def _co_occurrence_count(self, product_id: int, similar_user_ids: List[int]) -> int:
-        if not similar_user_ids:
-            return 0
-        return (
-            self.db.query(UserProduct)
-            .filter(
-                UserProduct.product_id == product_id,
-                UserProduct.user_id.in_(similar_user_ids),
-            )
-            .count()
-        )
+    @staticmethod
+    def _confidence_label(match_ratio: float, support_count: int) -> str:
+        if match_ratio >= 0.95 and support_count >= 2:
+            return "Точное совпадение"
+        if match_ratio >= 0.66 and support_count >= 2:
+            return "Сильное совпадение"
+        if match_ratio >= 0.33:
+            return "Есть схожие связки"
+        return "Редкое совпадение"
 
     def _match_flag_from_similar_users(
         self,

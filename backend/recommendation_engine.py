@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, func
 from models import User, Product, UserProduct, ProductCoOccurrence, Recommendation
 from typing import List, Dict, Optional
 
@@ -50,14 +50,34 @@ class RecommendationEngine:
         product_ids: List[int],
         exclude_user_id: Optional[int] = None,
     ) -> List[int]:
-        """Пользователи с хотя бы одним общим продуктом (без жёсткого фильтра по коже)."""
-        query = self.db.query(UserProduct.user_id).filter(
-            UserProduct.product_id.in_(product_ids)
+        """Ищем пользователей, у которых совпадает вся связка (или почти вся, если точных нет)."""
+        if not product_ids:
+            return []
+
+        unique_ids = list({pid for pid in product_ids if pid})
+        if not unique_ids:
+            return []
+
+        query = (
+            self.db.query(
+                UserProduct.user_id,
+                func.count(func.distinct(UserProduct.product_id)).label("match_count"),
+            )
+            .filter(UserProduct.product_id.in_(unique_ids))
         )
         if exclude_user_id is not None:
             query = query.filter(UserProduct.user_id != exclude_user_id)
 
-        return list({row[0] for row in query.distinct().all()})
+        rows = query.group_by(UserProduct.user_id).all()
+        if not rows:
+            return []
+
+        required = len(unique_ids)
+
+        # Берём только тех пользователей, у кого совпадает вся связка (иначе рекомендация считается «шумной»)
+        similar_users = [user_id for user_id, match_count in rows if match_count == required]
+
+        return similar_users
 
     def _get_candidate_products(
         self,

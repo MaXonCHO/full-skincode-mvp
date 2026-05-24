@@ -28,11 +28,17 @@ class RecommendationEngine:
         if not product_ids:
             return []
 
-        similar_user_ids = self._find_similar_users(product_ids, user_id)
-        candidate_product_ids = self._get_candidate_products(product_ids, similar_user_ids)
-
-        if not similar_user_ids or not candidate_product_ids:
+        # Находим сессии (user_id, session_id), которые содержат ВСЕ введённые продукты
+        session_pairs = self._find_similar_sessions(product_ids, user_id)
+        if not session_pairs:
             return []
+
+        # Кандидаты — только продукты из ТЕХ ЖЕ сессий, не входящие в ввод пользователя
+        candidate_product_ids = self._get_candidates_from_sessions(product_ids, session_pairs)
+        if not candidate_product_ids:
+            return []
+
+        similar_user_ids = list({uid for uid, _ in session_pairs})
 
         scored_products = self._score_products(
             candidate_product_ids,
@@ -45,58 +51,74 @@ class RecommendationEngine:
         ranked = sorted(scored_products, key=lambda x: x["score"], reverse=True)
         return ranked[:top_k]
 
-    def _find_similar_users(
+    def _find_similar_sessions(
         self,
         product_ids: List[int],
         exclude_user_id: Optional[int] = None,
-    ) -> List[int]:
-        """Ищем пользователей, у которых совпадает вся связка (или почти вся, если точных нет)."""
-        if not product_ids:
-            return []
-
+    ) -> List[tuple]:
+        """
+        Возвращает список (user_id, session_id), где сессия содержит ровно все product_ids.
+        Только сессии с session_id != NULL (связки, отправленные через /recommendations/).
+        """
         unique_ids = list({pid for pid in product_ids if pid})
         if not unique_ids:
             return []
+        required = len(unique_ids)
 
         query = (
             self.db.query(
                 UserProduct.user_id,
+                UserProduct.session_id,
                 func.count(func.distinct(UserProduct.product_id)).label("match_count"),
             )
-            .filter(UserProduct.product_id.in_(unique_ids))
+            .filter(
+                UserProduct.product_id.in_(unique_ids),
+                UserProduct.session_id.isnot(None),
+            )
         )
         if exclude_user_id is not None:
             query = query.filter(UserProduct.user_id != exclude_user_id)
 
-        rows = query.group_by(UserProduct.user_id).all()
-        if not rows:
-            return []
+        rows = query.group_by(UserProduct.user_id, UserProduct.session_id).all()
 
-        required = len(unique_ids)
+        return [
+            (uid, sid)
+            for uid, sid, cnt in rows
+            if cnt == required
+        ]
 
-        # Берём только тех пользователей, у кого совпадает вся связка (иначе рекомендация считается «шумной»)
-        similar_users = [user_id for user_id, match_count in rows if match_count == required]
-
-        return similar_users
-
-    def _get_candidate_products(
+    def _get_candidates_from_sessions(
         self,
         user_product_ids: List[int],
-        similar_user_ids: List[int],
+        session_pairs: List[tuple],
     ) -> List[int]:
-        if not similar_user_ids:
+        """
+        Возвращает продукты из конкретных сессий, исключая уже введённые продукты.
+        Продукты из других сессий этого же пользователя НЕ попадают.
+        """
+        if not session_pairs:
             return []
 
-        rows = (
-            self.db.query(UserProduct.product_id)
-            .filter(
-                UserProduct.user_id.in_(similar_user_ids),
-                ~UserProduct.product_id.in_(user_product_ids),
+        seen: set = set()
+        result: List[int] = []
+
+        for uid, sid in session_pairs:
+            rows = (
+                self.db.query(UserProduct.product_id)
+                .filter(
+                    UserProduct.user_id == uid,
+                    UserProduct.session_id == sid,
+                    ~UserProduct.product_id.in_(user_product_ids),
+                )
+                .distinct()
+                .all()
             )
-            .distinct()
-            .all()
-        )
-        return [row[0] for row in rows]
+            for (pid,) in rows:
+                if pid not in seen:
+                    seen.add(pid)
+                    result.append(pid)
+
+        return result
 
     def _score_products(
         self,

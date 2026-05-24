@@ -51,15 +51,16 @@ class UserProduct(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     product_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    session_id = Column(String(36), nullable=True, index=True)  # UUID сессии, группирует продукты одной связки
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
     user = relationship("User", back_populates="user_products")
     product = relationship("Product", back_populates="user_products")
     
-    # Unique constraint to prevent duplicate user-product pairs
+    # Unique per (user, product, session) — один и тот же продукт может быть в разных связках
     __table_args__ = (
-        Index('idx_user_product_unique', 'user_id', 'product_id', unique=True),
+        Index('idx_user_product_session_unique', 'user_id', 'product_id', 'session_id', unique=True),
     )
 
 

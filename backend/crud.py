@@ -101,23 +101,33 @@ def get_lines_by_brand(db: Session, brand: str) -> List[str]:
     return [row[0] for row in result]
 
 
-def add_user_product(db: Session, user_id: int, product_id: int) -> UserProduct:
+def add_user_product(db: Session, user_id: int, product_id: int, session_id: Optional[str] = None) -> UserProduct:
     """
-    Добавляет продукт пользователю. Если уже существует - возвращает существующий.
+    Добавляет продукт пользователю. Если уже существует в этой сессии - возвращает существующий.
+    session_id=None: индивидуальные добавления (без привязки к связке).
+    session_id=UUID: группирует продукты одной связки для рекомендаций.
     """
-    # Проверяем, существует ли уже связь
-    existing = db.query(UserProduct).filter(
+    query = db.query(UserProduct).filter(
         UserProduct.user_id == user_id,
-        UserProduct.product_id == product_id
-    ).first()
-    
+        UserProduct.product_id == product_id,
+    )
+    if session_id is not None:
+        query = query.filter(UserProduct.session_id == session_id)
+    else:
+        query = query.filter(UserProduct.session_id.is_(None))
+
+    existing = query.first()
     if existing:
         return existing
-    
-    user_product = UserProduct(user_id=user_id, product_id=product_id)
+
+    user_product = UserProduct(user_id=user_id, product_id=product_id, session_id=session_id)
     db.add(user_product)
-    db.commit()
-    db.refresh(user_product)
+    try:
+        db.commit()
+        db.refresh(user_product)
+    except Exception:
+        db.rollback()
+        return query.first() or user_product
     return user_product
 
 

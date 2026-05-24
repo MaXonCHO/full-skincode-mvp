@@ -39,9 +39,34 @@ app = FastAPI(title="SkinCode API", version="1.0.0")
 
 @app.on_event("startup")
 async def startup_event():
-    """При старте: если продуктов в базе нет — загружаем из CSV автоматически."""
+    """При старте: миграция схемы + автозагрузка продуктов если база пуста."""
     db = SessionLocal()
     try:
+        # --- Миграция: добавляем session_id если колонки ещё нет ---
+        try:
+            db.execute(text("ALTER TABLE user_products ADD COLUMN session_id VARCHAR(36)"))
+            db.commit()
+        except Exception:
+            db.rollback()
+
+        # --- Миграция: убираем старый уникальный индекс по (user, product) ---
+        try:
+            db.execute(text("DROP INDEX IF EXISTS idx_user_product_unique"))
+            db.commit()
+        except Exception:
+            db.rollback()
+
+        # --- Миграция: создаём новый индекс по (user, product, session) ---
+        try:
+            db.execute(text(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_user_product_session_unique "
+                "ON user_products (user_id, product_id, session_id)"
+            ))
+            db.commit()
+        except Exception:
+            db.rollback()
+
+        # --- Автозагрузка продуктов из CSV если таблица пуста ---
         product_count = db.query(Product).count()
         if product_count == 0:
             csv_path = os.path.join(os.path.dirname(__file__), 'products.csv')
@@ -51,7 +76,7 @@ async def startup_event():
                 csv_url = "https://raw.githubusercontent.com/MaXonCHO/full-skincode-mvp/main/backend/products.csv"
                 load_csv_to_database(csv_url=csv_url)
     except Exception as e:
-        print(f"Startup auto-load error: {e}")
+        print(f"Startup error: {e}")
     finally:
         db.close()
 
@@ -310,9 +335,10 @@ def get_recommendations_endpoint(request: RecommendationRequest, db: Session = D
     if request.undertone or request.skin_type:
         user = update_user(db, request.user_id, request.undertone, request.skin_type)
     
-    # Добавляем продукты пользователю
+    # Добавляем продукты пользователю — все под одним session_id (связка)
+    bundle_session_id = str(uuid.uuid4())
     for product_id in request.product_ids:
-        add_user_product(db, request.user_id, product_id)
+        add_user_product(db, request.user_id, product_id, bundle_session_id)
     
     # Генерируем рекомендации
     engine = RecommendationEngine(db)

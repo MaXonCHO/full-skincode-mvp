@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SkinCode — Админ панель связок</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+    <div class="app-shell">
+        <header class="app-header">
+            <div>
+                <p class="eyebrow">internal tool</p>
+                <h1>Монитор связок тональных основ</h1>
+                <p class="subtitle">Панель живёт отдельно от пользовательского сайта. Переподключите API и токен, когда база переедет на новый сервер.</p>
+            </div>
+            <div class="config-card">
+                <h2>Настройки источника</h2>
+                <label>
+                    API URL
+                    <input type="text" id="api-url" placeholder="https://..." />
+                </label>
+                <label>
+                    Admin token
+                    <input type="password" id="api-token" placeholder="X-Admin-Token" />
+                </label>
+                <button id="save-config">Сохранить</button>
+                <p class="config-hint">По умолчанию используется dev-admin-token и локальный backend на 8000 порту.</p>
+            </div>
+        </header>
+
+        <main class="grid">
+            <section class="panel" id="stats-panel">
+                <div class="panel-header">
+                    <h3>Статистика базы</h3>
+                    <button class="ghost" id="refresh-stats">Обновить</button>
+                </div>
+                <div class="stats-grid" id="stats-grid">
+                    <article class="stat-card">
+                        <p>Всего продуктов</p>
+                        <strong id="stat-total">—</strong>
+                    </article>
+                    <article class="stat-card">
+                        <p>С продуктами в связках</p>
+                        <strong id="stat-linked">—</strong>
+                    </article>
+                    <article class="stat-card">
+                        <p>Без связок</p>
+                        <strong id="stat-unlinked">—</strong>
+                    </article>
+                    <article class="stat-card">
+                        <p>Всего связей</p>
+                        <strong id="stat-links">—</strong>
+                    </article>
+                </div>
+            </section>
+
+            <section class="panel" id="gaps-panel">
+                <div class="panel-header">
+                    <h3>Продукты без связок</h3>
+                    <button class="ghost" id="refresh-gaps">Обновить</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Бренд</th>
+                            <th>Линейка</th>
+                            <th>Оттенок</th>
+                        </tr>
+                    </thead>
+                    <tbody id="gaps-body">
+                        <tr><td colspan="4" class="muted">Нет данных</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="panel wide" id="links-panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>Связки</h3>
+                        <p class="muted">Фильтры срабатывают по бренду/линейке продукта A.</p>
+                    </div>
+                    <div class="filters">
+                        <input type="text" id="filter-brand" placeholder="Бренд" />
+                        <input type="text" id="filter-line" placeholder="Линейка" />
+                        <button id="apply-filter">Фильтровать</button>
+                        <button class="ghost" id="reset-filter">Сбросить</button>
+                    </div>
+                </div>
+                <div class="panel-subheader">
+                    <form id="create-link-form">
+                        <h4>Добавить связь вручную</h4>
+                        <div class="form-row">
+                            <input type="number" id="product-a" placeholder="ID продукта A" required />
+                            <input type="number" id="product-b" placeholder="ID продукта B" required />
+                            <input type="number" id="link-weight" placeholder="Вес" value="1" min="0" />
+                            <button type="submit">Создать/обновить</button>
+                        </div>
+                    </form>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Продукт A</th>
+                            <th>Продукт B</th>
+                            <th>Вес</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="links-body">
+                        <tr><td colspan="5" class="muted">Нет данных</td></tr>
+                    </tbody>
+                </table>
+            </section>
+        </main>
+    </div>
+
+    <template id="link-row-template">
+        <tr>
+            <td class="mono" data-field="id"></td>
+            <td>
+                <div class="product-line" data-field="productA"></div>
+            </td>
+            <td>
+                <div class="product-line" data-field="productB"></div>
+            </td>
+            <td>
+                <input type="number" class="weight-input" min="0" />
+            </td>
+            <td>
+                <button class="ghost" data-action="delete">Удалить</button>
+            </td>
+        </tr>
+    </template>
+
+    <script src="app.js" type="module"></script>
+</body>
+</html>

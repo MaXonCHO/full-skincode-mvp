@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_
-from models import User, Product, UserProduct, Recommendation
-from schemas import UserCreate, ProductCreate, UserProductCreate
+from sqlalchemy import or_, and_, func
+from models import User, Product, UserProduct, Recommendation, ProductCoOccurrence
+from schemas import UserCreate, ProductCreate, UserProductCreate, CoOccurrenceCreate, CoOccurrenceUpdate
 from typing import List, Optional
 import uuid
 
@@ -152,3 +152,78 @@ def get_user_recommendations(db: Session, user_id: int) -> List[Recommendation]:
     return db.query(Recommendation).filter(
         Recommendation.user_id == user_id
     ).order_by(Recommendation.rank).all()
+
+
+# ==== Admin helpers ====
+def list_co_occurrences(db: Session, skip: int = 0, limit: int = 100) -> List[ProductCoOccurrence]:
+    return db.query(ProductCoOccurrence).offset(skip).limit(limit).all()
+
+
+def search_co_occurrences(db: Session, brand: Optional[str] = None, line: Optional[str] = None, limit: int = 100) -> List[ProductCoOccurrence]:
+    query = db.query(ProductCoOccurrence).join(Product, Product.id == ProductCoOccurrence.product_a_id)
+    if brand:
+        query = query.filter(Product.brand.ilike(f"%{brand}%"))
+    if line:
+        query = query.filter(Product.line.ilike(f"%{line}%"))
+    return query.limit(limit).all()
+
+
+def create_or_update_co_occurrence(db: Session, payload: CoOccurrenceCreate) -> ProductCoOccurrence:
+    a_id, b_id = sorted([payload.product_a_id, payload.product_b_id])
+    record = db.query(ProductCoOccurrence).filter(
+        ProductCoOccurrence.product_a_id == a_id,
+        ProductCoOccurrence.product_b_id == b_id
+    ).first()
+    if record:
+        record.co_occurrence_count = payload.co_occurrence_count
+    else:
+        record = ProductCoOccurrence(
+            product_a_id=a_id,
+            product_b_id=b_id,
+            co_occurrence_count=payload.co_occurrence_count,
+        )
+        db.add(record)
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def update_co_occurrence(db: Session, co_id: int, payload: CoOccurrenceUpdate) -> Optional[ProductCoOccurrence]:
+    record = db.query(ProductCoOccurrence).filter(ProductCoOccurrence.id == co_id).first()
+    if not record:
+        return None
+    record.co_occurrence_count = payload.co_occurrence_count
+    db.commit()
+    db.refresh(record)
+    return record
+
+
+def delete_co_occurrence(db: Session, co_id: int) -> bool:
+    record = db.query(ProductCoOccurrence).filter(ProductCoOccurrence.id == co_id).first()
+    if not record:
+        return False
+    db.delete(record)
+    db.commit()
+    return True
+
+
+def get_unlinked_products(db: Session, limit: int = 100) -> List[Product]:
+    linked_ids = db.query(ProductCoOccurrence.product_a_id).union(
+        db.query(ProductCoOccurrence.product_b_id)
+    ).subquery()
+    return db.query(Product).filter(~Product.id.in_(linked_ids)).limit(limit).all()
+
+
+def get_link_stats(db: Session):
+    total_products = db.query(func.count(Product.id)).scalar() or 0
+    linked_subquery = db.query(ProductCoOccurrence.product_a_id).union(
+        db.query(ProductCoOccurrence.product_b_id)
+    )
+    linked_products = db.query(func.count()).select_from(linked_subquery.subquery()).scalar() or 0
+    total_links = db.query(func.count(ProductCoOccurrence.id)).scalar() or 0
+    return {
+        "total_products": total_products,
+        "linked_products": min(linked_products, total_products),
+        "unlinked_products": max(total_products - linked_products, 0),
+        "total_links": total_links,
+    }

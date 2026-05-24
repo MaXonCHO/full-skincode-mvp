@@ -1,0 +1,240 @@
+const DEFAULT_CONFIG = {
+    apiUrl: localStorage.getItem('adminApiUrl') || 'http://127.0.0.1:8000',
+    token: localStorage.getItem('adminApiToken') || 'dev-admin-token'
+};
+
+const elements = {
+    apiUrlInput: document.getElementById('api-url'),
+    tokenInput: document.getElementById('api-token'),
+    saveConfigBtn: document.getElementById('save-config'),
+    refreshStats: document.getElementById('refresh-stats'),
+    refreshGaps: document.getElementById('refresh-gaps'),
+    applyFilter: document.getElementById('apply-filter'),
+    resetFilter: document.getElementById('reset-filter'),
+    filterBrand: document.getElementById('filter-brand'),
+    filterLine: document.getElementById('filter-line'),
+    linksBody: document.getElementById('links-body'),
+    gapsBody: document.getElementById('gaps-body'),
+    stats: {
+        total: document.getElementById('stat-total'),
+        linked: document.getElementById('stat-linked'),
+        unlinked: document.getElementById('stat-unlinked'),
+        links: document.getElementById('stat-links')
+    },
+    createForm: document.getElementById('create-link-form')
+};
+
+let config = { ...DEFAULT_CONFIG };
+let currentFilter = { brand: '', line: '' };
+
+function updateConfigUI() {
+    elements.apiUrlInput.value = config.apiUrl;
+    elements.tokenInput.value = config.token;
+}
+
+async function apiRequest(path, options = {}) {
+    const response = await fetch(`${config.apiUrl}${path}`, {
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Admin-Token': config.token,
+            ...(options.headers || {})
+        },
+        ...options
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || response.statusText);
+    }
+    const contentType = response.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+        return response.json();
+    }
+    return null;
+}
+
+async function loadStats() {
+    toggleLoading(elements.stats.total, true);
+    try {
+        const stats = await apiRequest('/admin/stats');
+        elements.stats.total.textContent = stats.total_products;
+        elements.stats.linked.textContent = stats.linked_products;
+        elements.stats.unlinked.textContent = stats.unlinked_products;
+        elements.stats.links.textContent = stats.total_links;
+    } catch (error) {
+        showError(elements.stats.total, error);
+    } finally {
+        toggleLoading(elements.stats.total, false);
+    }
+}
+
+async function loadGaps() {
+    renderPlaceholder(elements.gapsBody, 'Загрузка...');
+    try {
+        const data = await apiRequest('/admin/gaps');
+        if (!data.products.length) {
+            renderPlaceholder(elements.gapsBody, 'Все продукты имеют связки');
+            return;
+        }
+        elements.gapsBody.innerHTML = data.products
+            .map((product) => `
+                <tr>
+                    <td class="mono">${product.id}</td>
+                    <td>${product.brand}</td>
+                    <td>${product.line}</td>
+                    <td>${product.shade}</td>
+                </tr>
+            `)
+            .join('');
+    } catch (error) {
+        renderPlaceholder(elements.gapsBody, error.message || 'Ошибка загрузки');
+    }
+}
+
+async function loadLinks() {
+    renderPlaceholder(elements.linksBody, 'Загрузка...');
+    try {
+        const query = new URLSearchParams();
+        if (currentFilter.brand) query.set('brand', currentFilter.brand);
+        if (currentFilter.line) query.set('line', currentFilter.line);
+        const data = await apiRequest(`/admin/links?${query.toString()}`);
+        if (!data.length) {
+            renderPlaceholder(elements.linksBody, 'Нет связок по заданным фильтрам');
+            return;
+        }
+        elements.linksBody.innerHTML = '';
+        data.forEach(renderLinkRow);
+    } catch (error) {
+        renderPlaceholder(elements.linksBody, error.message || 'Ошибка загрузки');
+    }
+}
+
+function renderLinkRow(link) {
+    const template = document.getElementById('link-row-template');
+    const clone = template.content.cloneNode(true);
+    clone.querySelector('[data-field="id"]').textContent = link.id;
+    clone.querySelector('[data-field="productA"]').innerHTML = formatProduct(link.product_a);
+    clone.querySelector('[data-field="productB"]').innerHTML = formatProduct(link.product_b);
+    const weightInput = clone.querySelector('.weight-input');
+    weightInput.value = link.co_occurrence_count;
+    weightInput.addEventListener('change', () => updateLinkWeight(link.id, weightInput.value));
+    clone.querySelector('[data-action="delete"]').addEventListener('click', () => deleteLink(link.id));
+    elements.linksBody.appendChild(clone);
+}
+
+function formatProduct(product) {
+    if (!product) return '<span class="muted">Удалено</span>';
+    return `
+        <strong>${product.brand}</strong>
+        <span>${product.line}</span>
+        <span class="mono">${product.shade}</span>
+    `;
+}
+
+async function updateLinkWeight(id, value) {
+    try {
+        await apiRequest(`/admin/links/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ co_occurrence_count: Number(value) })
+        });
+    } catch (error) {
+        alert(`Не удалось обновить вес: ${error.message}`);
+    }
+}
+
+async function deleteLink(id) {
+    if (!confirm('Удалить связь?')) return;
+    try {
+        await apiRequest(`/admin/links/${id}`, { method: 'DELETE' });
+        await loadLinks();
+        await loadStats();
+    } catch (error) {
+        alert(`Не удалось удалить: ${error.message}`);
+    }
+}
+
+function renderPlaceholder(container, text) {
+    container.innerHTML = `<tr><td colspan="5" class="muted">${text}</td></tr>`;
+}
+
+function toggleLoading(node, isLoading) {
+    node.classList.toggle('skeleton', isLoading);
+}
+
+function showError(node, error) {
+    node.textContent = '—';
+    alert(error.message || 'Ошибка');
+}
+
+function handleSaveConfig() {
+    config.apiUrl = elements.apiUrlInput.value.trim() || DEFAULT_CONFIG.apiUrl;
+    config.token = elements.tokenInput.value.trim() || DEFAULT_CONFIG.token;
+    localStorage.setItem('adminApiUrl', config.apiUrl);
+    localStorage.setItem('adminApiToken', config.token);
+    loadAll();
+}
+
+function handleFilterSubmit() {
+    currentFilter.brand = elements.filterBrand.value.trim();
+    currentFilter.line = elements.filterLine.value.trim();
+    loadLinks();
+}
+
+function handleFilterReset() {
+    currentFilter = { brand: '', line: '' };
+    elements.filterBrand.value = '';
+    elements.filterLine.value = '';
+    loadLinks();
+}
+
+async function handleCreateLink(event) {
+    event.preventDefault();
+    const a = Number(document.getElementById('product-a').value);
+    const b = Number(document.getElementById('product-b').value);
+    const weight = Number(document.getElementById('link-weight').value || 1);
+    if (!a || !b) {
+        alert('Укажите ID обоих продуктов');
+        return;
+    }
+    if (a === b) {
+        alert('Нельзя соединять продукт сам с собой');
+        return;
+    }
+    try {
+        await apiRequest('/admin/links', {
+            method: 'POST',
+            body: JSON.stringify({
+                product_a_id: a,
+                product_b_id: b,
+                co_occurrence_count: weight
+            })
+        });
+        event.target.reset();
+        document.getElementById('link-weight').value = 1;
+        await loadLinks();
+        await loadStats();
+    } catch (error) {
+        alert(`Не удалось создать связь: ${error.message}`);
+    }
+}
+
+function bindEvents() {
+    elements.saveConfigBtn.addEventListener('click', handleSaveConfig);
+    elements.refreshStats.addEventListener('click', loadStats);
+    elements.refreshGaps.addEventListener('click', loadGaps);
+    elements.applyFilter.addEventListener('click', handleFilterSubmit);
+    elements.resetFilter.addEventListener('click', handleFilterReset);
+    elements.createForm.addEventListener('submit', handleCreateLink);
+}
+
+async function loadAll() {
+    await Promise.all([loadStats(), loadGaps(), loadLinks()]);
+}
+
+function init() {
+    updateConfigUI();
+    bindEvents();
+    loadAll();
+}
+
+init();

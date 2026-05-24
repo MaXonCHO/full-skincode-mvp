@@ -111,3 +111,41 @@ class SearchRequest(BaseModel):
 class SearchResponse(BaseModel):
     products: List[ProductResponse]
     total: int
+
+
+# Admin schemas
+class CoOccurrenceBase(BaseModel):
+    product_a_id: int
+    product_b_id: int
+    co_occurrence_count: int = Field(default=1, ge=0)
+
+
+class CoOccurrenceCreate(CoOccurrenceBase):
+    pass
+
+
+class CoOccurrenceUpdate(BaseModel):
+    co_occurrence_count: int = Field(..., ge=0)
+
+
+class CoOccurrenceResponse(BaseModel):
+    id: int
+    co_occurrence_count: int
+    updated_at: datetime
+    product_a: ProductResponse
+    product_b: ProductResponse
+
+    class Config:
+        from_attributes = True
+
+
+class GapProductsResponse(BaseModel):
+    total: int
+    products: List[ProductResponse]
+
+
+class LinkStatsResponse(BaseModel):
+    total_products: int
+    linked_products: int
+    unlinked_products: int
+    total_links: int

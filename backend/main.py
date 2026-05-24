@@ -1,5 +1,6 @@
-from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks, Header
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import uuid
@@ -14,7 +15,9 @@ from schemas import (
     ProductCreate, ProductResponse,
     UserProductCreate, UserProductResponse,
     RecommendationRequest, RecommendationResponse,
-    SearchRequest, SearchResponse
+    SearchRequest, SearchResponse,
+    CoOccurrenceCreate, CoOccurrenceResponse, CoOccurrenceUpdate,
+    GapProductsResponse, LinkStatsResponse
 )
 
 try:  # Railway/Render могут использовать старую версию schemas во время деплоя
@@ -25,7 +28,9 @@ from crud import (
     get_user, get_user_by_anonymous_id, create_user, update_user,
     get_products, get_product, get_products_by_brand, get_products_by_brand_and_line,
     create_product, search_products, get_brands, get_lines_by_brand,
-    add_user_product, get_user_products, delete_user_product, get_user_recommendations
+    add_user_product, get_user_products, delete_user_product, get_user_recommendations,
+    list_co_occurrences, search_co_occurrences, create_or_update_co_occurrence,
+    update_co_occurrence, delete_co_occurrence, get_unlinked_products, get_link_stats
 )
 from recommendation_engine import RecommendationEngine
 from init_db import init_database
@@ -35,6 +40,12 @@ from load_csv import load_csv_to_database
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="SkinCode API", version="1.0.0")
+ADMIN_API_TOKEN = os.getenv("ADMIN_API_TOKEN", "dev-admin-token")
+
+
+def require_admin_token(x_admin_token: Optional[str] = Header(None, alias="X-Admin-Token")):
+    if not x_admin_token or x_admin_token != ADMIN_API_TOKEN:
+        raise HTTPException(status_code=403, detail="Invalid admin token")
 
 
 @app.on_event("startup")
@@ -400,6 +411,75 @@ def get_user_recommendations_endpoint(user_id: int, db: Session = Depends(get_db
             ))
     
     return result
+
+
+# ===== ADMIN ENDPOINTS =====
+
+
+@app.get("/admin/links", response_model=List[CoOccurrenceResponse])
+def admin_list_links(
+    skip: int = 0,
+    limit: int = Query(100, le=200),
+    brand: Optional[str] = None,
+    line: Optional[str] = None,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_token)
+):
+    if brand or line:
+        return search_co_occurrences(db, brand=brand, line=line, limit=limit)
+    return list_co_occurrences(db, skip=skip, limit=limit)
+
+
+@app.post("/admin/links", response_model=CoOccurrenceResponse)
+def admin_create_link(
+    payload: CoOccurrenceCreate,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_token)
+):
+    return create_or_update_co_occurrence(db, payload)
+
+
+@app.patch("/admin/links/{link_id}", response_model=CoOccurrenceResponse)
+def admin_update_link(
+    link_id: int,
+    payload: CoOccurrenceUpdate,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_token)
+):
+    record = update_co_occurrence(db, link_id, payload)
+    if not record:
+        raise HTTPException(status_code=404, detail="Link not found")
+    return record
+
+
+@app.delete("/admin/links/{link_id}")
+def admin_delete_link(
+    link_id: int,
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_token)
+):
+    deleted = delete_co_occurrence(db, link_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Link not found")
+    return {"message": "Link removed"}
+
+
+@app.get("/admin/gaps", response_model=GapProductsResponse)
+def admin_gap_products(
+    limit: int = Query(100, le=500),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_token)
+):
+    products = get_unlinked_products(db, limit=limit)
+    return GapProductsResponse(total=len(products), products=products)
+
+
+@app.get("/admin/stats", response_model=LinkStatsResponse)
+def admin_link_stats(
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_token)
+):
+    return get_link_stats(db)
 
 
 if __name__ == "__main__":

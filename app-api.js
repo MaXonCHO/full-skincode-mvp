@@ -46,7 +46,9 @@ const state = {
     products: [],  // добавленные продукты пользователя
     allProducts: [],  // все продукты из backend для селекторов
     brands: [],
-    maxProducts: 3
+    maxProducts: 3,
+    isProductsLoading: true,
+    productsLoadError: false
 };
 
 // DOM элементы
@@ -66,6 +68,7 @@ const elements = {
     lineDropdownList: document.getElementById('line-dropdown-list'),
     lineSelectedText: document.getElementById('line-selected-text'),
     shadeSelect: document.getElementById('shade-select'),
+    brandLoadingHint: document.getElementById('brand-loading-hint'),
     btnAdd: document.getElementById('btn-add'),
     btnFind: document.getElementById('btn-find'),
     productsList: document.getElementById('products-list'),
@@ -77,6 +80,8 @@ const elements = {
     menuModal: document.getElementById('menu-modal'),
     menuClose: document.getElementById('menu-close')
 };
+
+updateBrandLoadingUI();
 
 // Инициализация
 async function init() {
@@ -148,6 +153,7 @@ async function initUser() {
 
 // Загрузка данных продуктов
 async function loadProductsData() {
+    setProductsLoadingState(true);
     try {
         const pageSize = 500;
         let skip = 0;
@@ -161,9 +167,14 @@ async function loadProductsData() {
         }
         state.allProducts = all;
         state.brands = [...new Set(state.allProducts.map(p => p.brand))].sort();
+        state.productsLoadError = false;
         console.log('Загружено продуктов:', state.allProducts.length);
     } catch (error) {
+        state.productsLoadError = true;
         console.error('Ошибка загрузки продуктов:', error);
+    } finally {
+        state.isProductsLoading = false;
+        updateBrandLoadingUI();
     }
 }
 
@@ -222,8 +233,73 @@ function setupEventListeners() {
 
 // Заполнение селектора брендов
 function populateBrandSelect() {
+    if (!elements.brandSelect) return;
+    if (!state.brands.length) {
+        updateBrandLoadingUI();
+        return;
+    }
+
     elements.brandSelect.innerHTML = '<option value="">Выбери бренд</option>' +
         state.brands.map(brand => `<option value="${brand}">${brand}</option>`).join('');
+    elements.brandSelect.value = '';
+    updateBrandLoadingUI();
+}
+
+function setProductsLoadingState(isLoading) {
+    state.isProductsLoading = isLoading;
+    if (isLoading) {
+        state.productsLoadError = false;
+    }
+    updateBrandLoadingUI();
+}
+
+function updateBrandLoadingUI() {
+    if (!elements.brandSelect) return;
+    const isLoading = state.isProductsLoading;
+    const hasError = state.productsLoadError;
+    const hasData = state.brands.length > 0;
+
+    if (isLoading) {
+        elements.brandSelect.innerHTML = '<option value="">Загружаем бренды...</option>';
+    } else if (hasError) {
+        elements.brandSelect.innerHTML = '<option value="">Не удалось загрузить бренды</option>';
+    } else if (!hasData) {
+        elements.brandSelect.innerHTML = '<option value="">Каталог пока пуст</option>';
+    }
+
+    const shouldDisable = isLoading || hasError || !hasData;
+    elements.brandSelect.disabled = shouldDisable;
+    elements.brandSelect.classList.toggle('is-loading', isLoading);
+
+    if (elements.brandLoadingHint) {
+        let text = 'Выбери бренд, линейку и оттенок';
+        if (hasError) {
+            text = 'Не удалось загрузить бренды. Обнови страницу и попробуй снова.';
+        } else if (isLoading) {
+            text = 'Загружаем бренды...';
+        } else if (hasData) {
+            const count = state.brands.length;
+            text = `Выбери бренд — доступно ${count} ${pluralize(count, ['бренд', 'бренда', 'брендов'])}`;
+        }
+        elements.brandLoadingHint.textContent = text;
+        elements.brandLoadingHint.classList.toggle('is-loading', isLoading);
+        elements.brandLoadingHint.classList.toggle('is-error', hasError);
+    }
+
+    if (shouldDisable) {
+        if (elements.lineDropdownBtn) elements.lineDropdownBtn.disabled = true;
+        if (elements.lineSelectedText) {
+            elements.lineSelectedText.textContent = isLoading ? 'Загрузка брендов...' : 'Сначала выбери бренд';
+        }
+        if (elements.lineDropdownList) {
+            elements.lineDropdownList.innerHTML = '';
+        }
+        if (elements.shadeSelect) {
+            elements.shadeSelect.disabled = true;
+            elements.shadeSelect.innerHTML = '<option value="">Сначала выбери линейку</option>';
+        }
+        elements.btnAdd?.setAttribute('disabled', 'disabled');
+    }
 }
 
 // Выбор подтона
@@ -353,6 +429,10 @@ function goToStep(stepNum) {
 
 // Обработчик смены бренда
 function onBrandChange() {
+    if (state.isProductsLoading || state.productsLoadError || !state.brands.length) {
+        updateBrandLoadingUI();
+        return;
+    }
     const brand = elements.brandSelect.value;
     state.selectedBrand = brand;
     state.selectedLine = null;
@@ -607,8 +687,11 @@ async function generateResults() {
         
         if (!recommendations.length) {
             elements.resultsGrid.innerHTML = `
-                <p class="subtitle">Пока нет мэтчей от других пользователей с похожими тоналками.</p>
-                <p class="subtitle" style="margin-top:12px;opacity:0.85;">Твой выбор уже сохранён в базе — рекомендации появятся, когда накопится больше данных от сообщества.</p>`;
+            <div class="results-empty">
+                <img src="Скинкод%20фотки%20сайт/icon.png" alt="Нет совпадений" class="results-empty-icon" loading="lazy">
+                <p class="results-empty-title">К сожалению, пока нет совпадений с другими пользователями</p>
+                <p class="results-empty-text">Твои продукты уже сохранены — рекомендации появятся, когда другие пользователи добавят похожие тональные средства.</p>
+            </div>`;
             window.currentRecommendations = [];
             return;
         }

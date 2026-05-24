@@ -538,8 +538,6 @@ body::after {
 /* Glass Card - эффект плавающего стекла */
 .glass-card {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.14) 100%);
-    backdrop-filter: blur(45px) saturate(1.15);
-    -webkit-backdrop-filter: blur(45px) saturate(1.15);
     border: 1px solid rgba(255, 255, 255, 0.55);
     border-radius: var(--radius-lg);
     padding: 48px 64px;
@@ -1324,13 +1322,9 @@ body::after {
     width: 100%;
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.18));
     transition: all 0.3s ease;
 }
 
-.product-card:hover .product-image img {
-    filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.25));
-}
 
 .product-info {
     flex: 1;
@@ -2048,13 +2042,9 @@ margin-bottom: 4px;
     width: 100%;
     height: 100%;
     object-fit: contain;
-    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.15));
     transition: all 0.3s ease;
 }
 
-.result-card:hover .result-image img {
-    filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.22));
-}
 
 .result-brand {
     font-size: 10px;

@@ -125,6 +125,16 @@ async function ensureUser() {
     }
 }
 
+function resetUserSession() {
+    state.userId = null;
+    state.anonymousId = null;
+    try {
+        localStorage.removeItem('skincode_anonymous_id');
+    } catch (storageError) {
+        console.warn('Не удалось очистить anonymous_id:', storageError);
+    }
+}
+
 // Инициализация пользователя
 async function initUser() {
     try {
@@ -556,8 +566,31 @@ async function addProduct() {
         await api.addUserProduct(state.userId, productId);
     } catch (error) {
         console.error('Ошибка добавления продукта на сервер:', error);
-        alert(error.message || 'Не удалось сохранить на сервер.');
-        return;
+        const message = error?.message || '';
+
+        if (message.includes('User not found')) {
+            resetUserSession();
+            const recreated = await ensureUser();
+            if (!recreated) {
+                alert('Сессия устарела. Обнови страницу и попробуй снова.');
+                return;
+            }
+            try {
+                await api.addUserProduct(state.userId, productId);
+            } catch (retryError) {
+                console.error('Повторная попытка добавить продукт не удалась:', retryError);
+                alert(retryError.message || 'Не удалось сохранить на сервер.');
+                return;
+            }
+        } else if (message.includes('Product not found')) {
+            alert('Этот продукт больше недоступен в каталоге. Обновляем список брендов.');
+            await loadProductsData();
+            populateBrandSelect();
+            return;
+        } else {
+            alert(message || 'Не удалось сохранить на сервер.');
+            return;
+        }
     }
 
     state.products.push({

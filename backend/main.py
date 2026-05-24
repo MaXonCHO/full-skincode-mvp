@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, Query
+from fastapi import FastAPI, Depends, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -12,7 +12,7 @@ from models import User, Product, UserProduct, Recommendation
 from schemas import (
     UserCreate, UserResponse,
     ProductCreate, ProductResponse,
-    UserProductCreate, UserProductResponse,
+    UserProductCreate, UserProductResponse, UserProductAddedResponse,
     RecommendationRequest, RecommendationResponse,
     SearchRequest, SearchResponse
 )
@@ -30,6 +30,25 @@ from load_csv import load_csv_to_database
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="SkinCode API", version="1.0.0")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """При старте: если продуктов в базе нет — загружаем из CSV автоматически."""
+    db = SessionLocal()
+    try:
+        product_count = db.query(Product).count()
+        if product_count == 0:
+            csv_path = os.path.join(os.path.dirname(__file__), 'products.csv')
+            if os.path.exists(csv_path):
+                load_csv_to_database(csv_file_path=csv_path)
+            else:
+                csv_url = "https://raw.githubusercontent.com/MaXonCHO/full-skincode-mvp/main/backend/products.csv"
+                load_csv_to_database(csv_url=csv_url)
+    except Exception as e:
+        print(f"Startup auto-load error: {e}")
+    finally:
+        db.close()
 
 # CORS middleware
 app.add_middleware(
@@ -174,27 +193,36 @@ def get_user_products_endpoint(user_id: int, db: Session = Depends(get_db)):
     return get_user_products(db, user_id)
 
 
-@app.post("/users/{user_id}/products", response_model=UserProductResponse)
-def add_user_product_endpoint(
-    user_id: int,
-    user_product: UserProductCreate,
-    db: Session = Depends(get_db)
-):
-    # Проверяем существование пользователя
-    user = get_user(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Проверяем существование продукта
-    product = get_product(db, user_product.product_id)
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-    
-    result = add_user_product(db, user_id, user_product.product_id)
+def _update_co_occurrence_background():
+    db = SessionLocal()
     try:
         RecommendationEngine(db).update_co_occurrence_matrix()
     except Exception:
         pass
+    finally:
+        db.close()
+
+
+@app.post("/users/{user_id}/products", response_model=UserProductAddedResponse)
+def add_user_product_endpoint(
+    user_id: int,
+    user_product: UserProductCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    user = get_user(db, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    product = get_product(db, user_product.product_id)
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Product not found (id={user_product.product_id})",
+        )
+
+    result = add_user_product(db, user_id, user_product.product_id)
+    background_tasks.add_task(_update_co_occurrence_background)
     return result
 
 

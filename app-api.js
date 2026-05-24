@@ -67,32 +67,35 @@ async function init() {
         skinBtns: elements.skinBtns.length
     });
     
+    // Сразу настраиваем UI — кнопки должны работать до завершения загрузки
+    setupEventListeners();
+    initWizardSteps();
+    handleStartQueryParam();
+
     try {
-        console.log('Начало initUser()');
-        // Создаем или получаем пользователя
-        await initUser();
-        console.log('initUser() завершен');
-        
-        console.log('Начало loadProductsData()');
-        // Загружаем данные продуктов
-        await loadProductsData();
-        console.log('loadProductsData() завершен');
-        
-        console.log('Начало populateBrandSelect()');
-        // Заполняем селекторы
+        // Параллельно запускаем создание пользователя и загрузку продуктов
+        await Promise.all([initUser(), loadProductsData()]);
         populateBrandSelect();
-        console.log('populateBrandSelect() завершен');
-        
-        console.log('Начало setupEventListeners()');
-        // Настраиваем обработчики событий
-        setupEventListeners();
-        initWizardSteps();
-        handleStartQueryParam();
-        console.log('setupEventListeners() завершен');
-        
         console.log('Инициализация завершена');
     } catch (error) {
         console.error('Ошибка инициализации:', error);
+    }
+}
+
+async function ensureUser() {
+    if (state.userId) return true;
+    if (typeof api === 'undefined') return false;
+    try {
+        const user = await api.createUser(state.anonymousId);
+        state.userId = user.id;
+        if (user.anonymous_id) {
+            state.anonymousId = user.anonymous_id;
+            localStorage.setItem('skincode_anonymous_id', user.anonymous_id);
+        }
+        return true;
+    } catch (error) {
+        console.error('ensureUser failed:', error);
+        return false;
     }
 }
 
@@ -208,6 +211,10 @@ function selectUndertone(btn) {
     btn.classList.add('selected');
     state.undertone = btn.dataset.value;
     checkStep1_5Complete();
+    // Сохраняем сразу — не ждём финала флоу
+    if (state.userId) {
+        api.updateUser(state.userId, state.undertone, null).catch(e => console.warn('updateUser undertone:', e));
+    }
 }
 
 // Выбор типа кожи
@@ -216,6 +223,10 @@ function selectSkinType(btn) {
     btn.classList.add('selected');
     state.skinType = btn.dataset.value;
     checkStep1_5Complete();
+    // Сохраняем сразу — не ждём финала флоу
+    if (state.userId) {
+        api.updateUser(state.userId, null, state.skinType).catch(e => console.warn('updateUser skin_type:', e));
+    }
 }
 
 // Проверка завершенности этапа 1.5
@@ -430,14 +441,22 @@ async function addProduct() {
         return;
     }
 
-    if (state.userId && typeof api !== 'undefined') {
-        try {
-            await api.addUserProduct(state.userId, productId);
-        } catch (error) {
-            console.error('Ошибка добавления продукта на сервер:', error);
-            alert('Не удалось сохранить на сервер. Проверь подключение к API.');
-            return;
-        }
+    if (typeof api === 'undefined') {
+        alert('API не загружен. Обнови страницу.');
+        return;
+    }
+
+    if (!(await ensureUser())) {
+        alert(`Не удалось создать сессию пользователя.\nAPI: ${api.baseUrl}\nПроверь, что backend запущен.`);
+        return;
+    }
+
+    try {
+        await api.addUserProduct(state.userId, productId);
+    } catch (error) {
+        console.error('Ошибка добавления продукта на сервер:', error);
+        alert(error.message || 'Не удалось сохранить на сервер.');
+        return;
     }
 
     state.products.push({

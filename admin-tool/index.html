@@ -114,6 +114,32 @@
                     </tbody>
                 </table>
             </section>
+
+            <section class="panel wide" id="users-panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>Пользователи и их продукты</h3>
+                        <p class="muted">Показываем первые N пользователей с их текущими связками.</p>
+                    </div>
+                    <div class="filters">
+                        <input type="number" id="users-limit" min="1" max="500" value="50" />
+                        <button id="refresh-users">Обновить</button>
+                        <button class="ghost" id="download-users">Скачать CSV</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Количество продуктов</th>
+                            <th>Список</th>
+                        </tr>
+                    </thead>
+                    <tbody id="users-body">
+                        <tr><td colspan="3" class="muted">Нет данных</td></tr>
+                    </tbody>
+                </table>
+            </section>
         </main>
     </div>
 

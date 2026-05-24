@@ -125,6 +125,10 @@ body {
     margin: 0;
 }
 
+.panel-header p.muted {
+    margin: 4px 0 0;
+}
+
 .panel-subheader {
     margin: 16px 0;
     border: 1px dashed rgba(0, 0, 0, 0.1);
@@ -154,6 +158,10 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
+}
+
+#users-panel .filters input[type="number"] {
+    width: 120px;
 }
 
 button {
@@ -214,6 +222,19 @@ th {
 
 .product-line strong {
     font-size: 15px;
+}
+
+.user-products-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.user-products-list span {
+    background: rgba(15, 15, 15, 0.06);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 13px;
 }
 
 .mono {

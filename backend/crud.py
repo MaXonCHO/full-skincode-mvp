@@ -227,3 +227,21 @@ def get_link_stats(db: Session):
         "unlinked_products": max(total_products - linked_products, 0),
         "total_links": total_links,
     }
+
+
+def get_user_product_groups(db: Session, limit: int = 50):
+    user_ids = [row[0] for row in db.query(UserProduct.user_id).distinct().limit(limit).all()]
+    result = []
+    for uid in user_ids:
+        products = (
+            db.query(Product)
+            .join(UserProduct, UserProduct.product_id == Product.id)
+            .filter(UserProduct.user_id == uid)
+            .all()
+        )
+        result.append({
+            "user_id": uid,
+            "total": len(products),
+            "products": products,
+        })
+    return result

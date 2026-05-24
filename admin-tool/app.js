@@ -21,7 +21,11 @@ const elements = {
         unlinked: document.getElementById('stat-unlinked'),
         links: document.getElementById('stat-links')
     },
-    createForm: document.getElementById('create-link-form')
+    createForm: document.getElementById('create-link-form'),
+    usersBody: document.getElementById('users-body'),
+    usersLimit: document.getElementById('users-limit'),
+    refreshUsers: document.getElementById('refresh-users'),
+    downloadUsers: document.getElementById('download-users')
 };
 
 let config = { ...DEFAULT_CONFIG };
@@ -107,6 +111,74 @@ async function loadLinks() {
     } catch (error) {
         renderPlaceholder(elements.linksBody, error.message || 'Ошибка загрузки');
     }
+}
+
+async function loadUsers() {
+    renderUsersPlaceholder('Загрузка...');
+    try {
+        const limit = Number(elements.usersLimit.value) || 50;
+        const data = await apiRequest(`/admin/user-products?limit=${limit}`);
+        if (!data.items.length) {
+            renderUsersPlaceholder('Нет пользователей с продуктами');
+            return;
+        }
+        elements.usersBody.innerHTML = data.items
+            .map((item) => `
+                <tr>
+                    <td class="mono">${item.user_id}</td>
+                    <td>${item.total}</td>
+                    <td>
+                        <div class="user-products-list">
+                            ${item.products.map((p) => `<span title="${p.brand} ${p.line}">${p.shade || p.line}</span>`).join('')}
+                        </div>
+                    </td>
+                </tr>
+            `)
+            .join('');
+    } catch (error) {
+        renderUsersPlaceholder(error.message || 'Ошибка загрузки');
+    }
+}
+
+function renderUsersPlaceholder(text) {
+    elements.usersBody.innerHTML = `<tr><td colspan="3" class="muted">${text}</td></tr>`;
+}
+
+async function downloadUsersCsv() {
+    try {
+        const limit = Number(elements.usersLimit.value) || 50;
+        const data = await apiRequest(`/admin/user-products?limit=${limit}`);
+        if (!data.items.length) {
+            alert('Нет данных для экспорта');
+            return;
+        }
+        const rows = [['user_id', 'product_id', 'brand', 'line', 'shade']];
+        data.items.forEach((item) => {
+            item.products.forEach((p) => {
+                rows.push([item.user_id, p.id, p.brand, p.line, p.shade]);
+            });
+        });
+        const csv = rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `skincode-user-products.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    } catch (error) {
+        alert(`Не удалось выгрузить CSV: ${error.message}`);
+    }
+}
+
+function escapeCsvCell(value) {
+    const cell = value == null ? '' : String(value);
+    if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+        return '"' + cell.replace(/"/g, '""') + '"';
+    }
+    return cell;
 }
 
 function renderLinkRow(link) {
@@ -225,10 +297,12 @@ function bindEvents() {
     elements.applyFilter.addEventListener('click', handleFilterSubmit);
     elements.resetFilter.addEventListener('click', handleFilterReset);
     elements.createForm.addEventListener('submit', handleCreateLink);
+    elements.refreshUsers.addEventListener('click', loadUsers);
+    elements.downloadUsers.addEventListener('click', downloadUsersCsv);
 }
 
 async function loadAll() {
-    await Promise.all([loadStats(), loadGaps(), loadLinks()]);
+    await Promise.all([loadStats(), loadGaps(), loadLinks(), loadUsers()]);
 }
 
 function init() {

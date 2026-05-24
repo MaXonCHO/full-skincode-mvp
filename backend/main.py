@@ -17,7 +17,7 @@ from schemas import (
     RecommendationRequest, RecommendationResponse,
     SearchRequest, SearchResponse,
     CoOccurrenceCreate, CoOccurrenceResponse, CoOccurrenceUpdate,
-    GapProductsResponse, LinkStatsResponse
+    GapProductsResponse, LinkStatsResponse, AdminUserProductsResponse
 )
 
 try:  # Railway/Render могут использовать старую версию schemas во время деплоя
@@ -30,7 +30,7 @@ from crud import (
     create_product, search_products, get_brands, get_lines_by_brand,
     add_user_product, get_user_products, delete_user_product, get_user_recommendations,
     list_co_occurrences, search_co_occurrences, create_or_update_co_occurrence,
-    update_co_occurrence, delete_co_occurrence, get_unlinked_products, get_link_stats
+    update_co_occurrence, delete_co_occurrence, get_unlinked_products, get_link_stats, get_user_product_groups
 )
 from recommendation_engine import RecommendationEngine
 from init_db import init_database
@@ -480,6 +480,16 @@ def admin_link_stats(
     _: None = Depends(require_admin_token)
 ):
     return get_link_stats(db)
+
+
+@app.get("/admin/user-products", response_model=AdminUserProductsResponse)
+def admin_user_products(
+    limit: int = Query(50, le=500),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_token)
+):
+    groups = get_user_product_groups(db, limit=limit)
+    return AdminUserProductsResponse(total_users=len(groups), items=groups)
 
 
 if __name__ == "__main__":

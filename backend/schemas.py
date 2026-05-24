@@ -149,3 +149,17 @@ class LinkStatsResponse(BaseModel):
     linked_products: int
     unlinked_products: int
     total_links: int
+
+
+class AdminUserProducts(BaseModel):
+    user_id: int
+    total: int
+    products: List[ProductResponse]
+
+    class Config:
+        from_attributes = True
+
+
+class AdminUserProductsResponse(BaseModel):
+    total_users: int
+    items: List[AdminUserProducts]

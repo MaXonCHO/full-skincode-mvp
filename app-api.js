@@ -218,6 +218,9 @@ function setupEventListeners() {
         if (e.key === 'Escape') closeMenu();
     });
 
+    window.addEventListener('scroll', handleMenuButtonScroll, { passive: true });
+    handleMenuButtonScroll();
+
     // Этап 1.5: выбор подтона
     elements.undertoneBtns.forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -356,6 +359,23 @@ function closeMenu() {
     document.body.style.overflow = '';
 }
 
+function handleMenuButtonScroll() {
+    const menuBtn = elements.menuBtn;
+    if (!menuBtn) return;
+
+    if (menuBtn.style.display === 'none') {
+        menuBtn.classList.remove('scrolled');
+        return;
+    }
+
+    const showThreshold = 150;
+    if ((window.scrollY || window.pageYOffset) >= showThreshold) {
+        menuBtn.classList.add('scrolled');
+    } else {
+        menuBtn.classList.remove('scrolled');
+    }
+}
+
 // Обновление прогресс-бара
 // 1 = подтон/кожа, 2 = тоналки, 3 = анализ, 4 = результаты
 function getProgressStep(currentStep) {
@@ -429,8 +449,10 @@ function goToStep(stepNum) {
     if (menuBtn) {
         if (stepNum === 1.5 || stepNum === 2 || stepNum === 3 || stepNum === 4) {
             menuBtn.style.display = 'none';
+            menuBtn.classList.remove('scrolled');
         } else {
             menuBtn.style.display = 'block';
+            handleMenuButtonScroll();
         }
     }
 

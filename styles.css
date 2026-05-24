@@ -613,6 +613,17 @@ body::after {
     display: block;
 }
 
+@media (min-width: 1200px) {
+    .hero-image-block {
+        height: 520px;
+    }
+
+    .hero-image-block .hero-bg-img {
+        height: 100%;
+        object-fit: cover;
+    }
+}
+
 .hero-text-overlay {
     position: absolute;
     left: 0;

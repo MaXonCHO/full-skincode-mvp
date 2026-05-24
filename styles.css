@@ -17,10 +17,10 @@
     --skin-deep: #8C6A4E;
     
     /* Glass effect - более светлый */
-    --glass-bg: rgba(255, 255, 255, 0.55);
-    --glass-border: rgba(255, 255, 255, 0.65);
-    --glass-blur: blur(35px);
-    --glass-extended: rgba(255, 255, 255, 0.35);
+    --glass-bg: rgba(255, 255, 255, 0.28);
+    --glass-border: rgba(255, 255, 255, 0.55);
+    --glass-blur: blur(45px);
+    --glass-extended: rgba(255, 255, 255, 0.2);
     
     /* Shadows - обновлён */
     --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.08);
@@ -537,20 +537,29 @@ body::after {
 
 /* Glass Card - эффект плавающего стекла */
 .glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--glass-border);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0.14) 100%);
+    backdrop-filter: blur(45px) saturate(1.15);
+    -webkit-backdrop-filter: blur(45px) saturate(1.15);
+    border: 1px solid rgba(255, 255, 255, 0.55);
     border-radius: var(--radius-lg);
     padding: 48px 64px;
     box-shadow: 
-        0 20px 60px rgba(0, 0, 0, 0.12),
-        0 4px 12px rgba(0, 0, 0, 0.08),
-        0 0 0 1px rgba(255,255,255,0.15) inset,
-        0 8px 32px rgba(0,0,0,0.1);
+        0 35px 90px rgba(15, 15, 15, 0.18),
+        0 15px 40px rgba(15, 15, 15, 0.12),
+        0 0 0 1px rgba(255,255,255,0.2) inset;
     transition: var(--transition-smooth);
     transform: perspective(1000px) rotateX(1deg) translateZ(10px);
     transform-style: preserve-3d;
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.35), transparent 55%);
+    pointer-events: none;
 }
 
 .glass-card:hover {
@@ -1192,14 +1201,14 @@ body::after {
 
 /* Products Panel - правая колонка с увеличенным padding */
 .products-panel {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.75) 0%, rgba(249, 243, 238, 0.8) 100%);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.36) 0%, rgba(255, 255, 255, 0.16) 100%);
     border-radius: var(--radius-lg);
     padding: 32px;
     min-height: 360px;
     max-height: 420px;
     overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: inset 0 2px 12px rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 25px 70px rgba(15, 15, 15, 0.08);
 }
 
 .products-panel::-webkit-scrollbar {
@@ -1979,16 +1988,17 @@ margin-bottom: 4px;
 }
 
 .result-card {
-    background: rgba(255, 255, 255, 0.4);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.2) 100%);
     border-radius: var(--radius-lg);
     padding: 24px 16px;
     text-align: center;
     transition: all 0.3s ease;
     cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.45);
     text-decoration: none;
     color: inherit;
     display: block;
+    box-shadow: 0 18px 45px rgba(15, 15, 15, 0.1);
 }
 
 .result-card:hover {
@@ -2085,28 +2095,32 @@ margin-bottom: 4px;
 
 .results-empty {
     text-align: center;
-    padding: 36px 24px 40px;
-    background: rgba(255, 255, 255, 0.35);
+    padding: 16px 12px 20px;
+    background: transparent;
     border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
 }
 
 .results-empty-icon {
-    width: 88px;
-    height: 88px;
-    margin-bottom: 16px;
-    opacity: 0.85;
+    width: 136px;
+    height: 136px;
+    margin-bottom: 6px;
+    opacity: 0.95;
 }
 
 .results-empty-title {
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 600;
-    margin-bottom: 8px;
+    max-width: 420px;
 }
 
 .results-empty-text {
-    font-size: 14px;
-    color: rgba(15, 15, 15, 0.7);
-    max-width: 460px;
+    font-size: 12px;
+    color: rgba(15, 15, 15, 0.6);
+    max-width: 380px;
     margin: 0 auto;
 }
 

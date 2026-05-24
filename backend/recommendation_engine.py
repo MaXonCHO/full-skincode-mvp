@@ -31,6 +31,13 @@ class RecommendationEngine:
         # Находим сессии (user_id, session_id), которые содержат ВСЕ введённые продукты
         session_pairs = self._find_similar_sessions(product_ids, user_id)
         if not session_pairs:
+            session_pairs = self._find_overlapping_sessions(
+                product_ids,
+                undertone,
+                skin_type,
+                user_id,
+            )
+        if not session_pairs:
             return []
 
         # Кандидаты — только продукты из ТЕХ ЖЕ сессий, не входящие в ввод пользователя
@@ -86,6 +93,47 @@ class RecommendationEngine:
             for uid, sid, cnt in rows
             if cnt == required
         ]
+
+    def _find_overlapping_sessions(
+        self,
+        product_ids: List[int],
+        undertone: Optional[str],
+        skin_type: Optional[str],
+        exclude_user_id: Optional[int] = None,
+        min_overlap: int = 1,
+    ) -> List[tuple]:
+        """
+        Если нет точного совпадения связки, ищем сессии с пересечением.
+        Требуем совпадение по подтону/типу кожи (если заданы) и минимум min_overlap общих продуктов.
+        """
+        unique_ids = list({pid for pid in product_ids if pid})
+        if not unique_ids:
+            return []
+
+        query = (
+            self.db.query(
+                UserProduct.user_id,
+                UserProduct.session_id,
+                func.count(func.distinct(UserProduct.product_id)).label("overlap_count"),
+            )
+            .join(User, User.id == UserProduct.user_id)
+            .filter(
+                UserProduct.product_id.in_(unique_ids),
+                UserProduct.session_id.isnot(None),
+            )
+        )
+
+        if exclude_user_id is not None:
+            query = query.filter(UserProduct.user_id != exclude_user_id)
+        if undertone:
+            query = query.filter(User.undertone == undertone)
+        if skin_type:
+            query = query.filter(User.skin_type == skin_type)
+
+        query = query.group_by(UserProduct.user_id, UserProduct.session_id)
+        rows = query.having(func.count(func.distinct(UserProduct.product_id)) >= min_overlap).all()
+
+        return [(uid, sid) for uid, sid, _ in rows]
 
     def _get_candidates_from_sessions(
         self,

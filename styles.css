@@ -6,7 +6,7 @@
 
 :root {
     /* Base colors */
-    --bg-primary: #FFFEFB;
+    --bg-primary: #FFFDF7;
     --text-primary: #0F0F0F;
     --text-secondary: #5C5046;
     
@@ -48,7 +48,7 @@ body {
     font-weight: 400;
     line-height: 1.6;
     color: var(--text-primary);
-    background: #FFFEFB;
+    background: linear-gradient(160deg, #FFFDF7 0%, #FFF5EA 50%, #FFF0E1 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -531,8 +531,8 @@ body::after {
 
 /* Glass Card - эффект плавающего стекла */
 .glass-card {
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.65);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.74) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
     border-radius: var(--radius-lg);
     padding: 48px 64px;
     box-shadow:
@@ -545,11 +545,21 @@ body::after {
     overflow: hidden;
 }
 
+.glass-card::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border-radius: calc(var(--radius-lg) - 8px);
+    background: linear-gradient(130deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 55%);
+    pointer-events: none;
+    opacity: 0.8;
+}
+
 .glass-card::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: none;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0));
     pointer-events: none;
 }
 
@@ -657,8 +667,8 @@ body::after {
 
 /* Блок формы выбора подтона и типа кожи */
 .hero-form {
-    background: #FFFFFF;
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.8));
+    border: 1px solid rgba(255, 255, 255, 0.65);
     border-radius: var(--radius-lg);
     padding: 40px 48px;
     max-width: 1100px;

@@ -723,7 +723,7 @@ async function generateResults() {
             <div class="results-empty">
                 <img src="Скинкод%20фотки%20сайт/icon.png" alt="Нет совпадений" class="results-empty-icon" loading="lazy">
                 <p class="results-empty-title">К сожалению, пока нет совпадений с другими пользователями</p>
-                <p class="results-empty-text">Твои продукты уже сохранены, рекомендации появятся, когда другие пользователи добавят похожие тональные средства.</p>
+                <p class="results-empty-text">Твои продукты уже сохранены — рекомендации появятся,<br>когда другие пользователи добавят похожие тональные средства.</p>
             </div>`;
             window.currentRecommendations = [];
             return;

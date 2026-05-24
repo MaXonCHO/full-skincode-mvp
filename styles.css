@@ -82,6 +82,14 @@ body::after {
     z-index: 1;
 }
 
+/* Desktop optimization - wider layout */
+@media (min-width: 1440px) {
+    .app {
+        max-width: 1400px;
+        padding: 60px 140px 100px;
+    }
+}
+
 /* Menu Button - Default: Aligned with logo on the right, NO animation */
 .menu-btn {
     position: fixed;
@@ -545,6 +553,13 @@ body::after {
     overflow: hidden;
 }
 
+/* Desktop - more spacious cards */
+@media (min-width: 1440px) {
+    .glass-card {
+        padding: 56px 80px;
+    }
+}
+
 .glass-card::after {
     content: '';
     position: absolute;
@@ -580,6 +595,14 @@ body::after {
     height: auto;
     transform: perspective(1000px) rotateX(2deg);
     transform-style: preserve-3d;
+}
+
+/* Desktop - larger hero block */
+@media (min-width: 1440px) {
+    .hero-image-block {
+        max-width: 1600px;
+        margin: 0 auto 48px;
+    }
 }
 
 .hero-image-block .hero-bg-img {
@@ -643,6 +666,14 @@ body::after {
     max-width: 420px;
 }
 
+/* Desktop - larger hero title */
+@media (min-width: 1440px) {
+    .hero-title {
+        font-size: 56px;
+        max-width: 520px;
+    }
+}
+
 .hero-tagline {
     font-size: 16px;
     color: rgba(245, 230, 211, 0.95);
@@ -653,6 +684,14 @@ body::after {
         0 2px 8px rgba(0,0,0,0.4),
         0 4px 16px rgba(0,0,0,0.25);
     max-width: 380px;
+}
+
+/* Desktop - larger tagline */
+@media (min-width: 1440px) {
+    .hero-tagline {
+        font-size: 18px;
+        max-width: 460px;
+    }
 }
 
 /* Блок формы выбора подтона и типа кожи */
@@ -1568,6 +1607,14 @@ margin-bottom: 4px;
     letter-spacing: 0.02em;
 }
 
+/* Desktop - larger section titles */
+@media (min-width: 1440px) {
+    .section-title {
+        font-size: 52px;
+        margin-bottom: 64px;
+    }
+}
+
 .steps-container {
     display: flex;
     flex-direction: column;
@@ -1611,6 +1658,13 @@ margin-bottom: 4px;
     color: #8C6A4E;
 }
 
+/* Desktop - larger step numbers */
+@media (min-width: 1440px) {
+    .step-number-new {
+        font-size: 120px;
+    }
+}
+
 .step-text h3 {
     font-size: 20px;
     font-weight: 600;
@@ -1624,6 +1678,18 @@ margin-bottom: 4px;
     color: var(--text-secondary);
     line-height: 1.5;
     max-width: 350px;
+}
+
+/* Desktop - larger step text */
+@media (min-width: 1440px) {
+    .step-text h3 {
+        font-size: 24px;
+    }
+    
+    .step-text p {
+        font-size: 17px;
+        max-width: 420px;
+    }
 }
 
 @media (max-width: 768px) {
@@ -1695,6 +1761,13 @@ margin-bottom: 4px;
     line-height: 1;
     margin-bottom: 12px;
     transition: transform 0.3s ease;
+}
+
+/* Desktop - larger numbers */
+@media (min-width: 1440px) {
+    .number-value {
+        font-size: 80px;
+    }
 }
 
 .number-value .suffix-small {

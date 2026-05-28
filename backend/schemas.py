@@ -165,3 +165,8 @@ class AdminUserProducts(BaseModel):
 class AdminUserProductsResponse(BaseModel):
     total_users: int
     items: List[AdminUserProducts]
+
+
+class AllProductsResponse(BaseModel):
+    total: int
+    products: List[ProductResponse]

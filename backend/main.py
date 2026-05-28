@@ -17,7 +17,7 @@ from schemas import (
     RecommendationRequest, RecommendationResponse,
     SearchRequest, SearchResponse,
     CoOccurrenceCreate, CoOccurrenceResponse, CoOccurrenceUpdate,
-    GapProductsResponse, LinkStatsResponse, AdminUserProductsResponse
+    GapProductsResponse, LinkStatsResponse, AdminUserProductsResponse, AllProductsResponse
 )
 
 try:  # Railway/Render могут использовать старую версию schemas во время деплоя
@@ -30,7 +30,8 @@ from crud import (
     create_product, search_products, get_brands, get_lines_by_brand,
     add_user_product, get_user_products, delete_user_product, get_user_recommendations,
     list_co_occurrences, search_co_occurrences, create_or_update_co_occurrence,
-    update_co_occurrence, delete_co_occurrence, get_unlinked_products, get_link_stats, get_user_product_groups
+    update_co_occurrence, delete_co_occurrence, get_unlinked_products, get_link_stats, 
+    get_user_product_groups, get_all_products_paginated
 )
 from recommendation_engine import RecommendationEngine
 from init_db import init_database
@@ -490,6 +491,17 @@ def admin_user_products(
 ):
     groups = get_user_product_groups(db, limit=limit)
     return AdminUserProductsResponse(total_users=len(groups), items=groups)
+
+
+@app.get("/admin/all-products", response_model=AllProductsResponse)
+def admin_all_products(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_token)
+):
+    """Возвращает все продукты из базы с пагинацией."""
+    return get_all_products_paginated(db, skip=skip, limit=limit)
 
 
 if __name__ == "__main__":

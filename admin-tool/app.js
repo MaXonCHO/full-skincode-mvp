@@ -25,11 +25,17 @@ const elements = {
     usersBody: document.getElementById('users-body'),
     usersLimit: document.getElementById('users-limit'),
     refreshUsers: document.getElementById('refresh-users'),
-    downloadUsers: document.getElementById('download-users')
+    downloadUsers: document.getElementById('download-users'),
+    catalogBody: document.getElementById('catalog-body'),
+    catalogCount: document.getElementById('catalog-count'),
+    catalogTotal: document.getElementById('catalog-total'),
+    refreshCatalog: document.getElementById('refresh-catalog'),
+    loadMoreCatalog: document.getElementById('load-more-catalog')
 };
 
 let config = { ...DEFAULT_CONFIG };
 let currentFilter = { brand: '', line: '' };
+let catalogState = { skip: 0, limit: 100, total: 0, products: [] };
 
 function updateConfigUI() {
     elements.apiUrlInput.value = config.apiUrl;
@@ -300,6 +306,48 @@ async function handleCreateLink(event) {
     }
 }
 
+async function loadCatalog(append = false) {
+    if (!append) {
+        catalogState.skip = 0;
+        catalogState.products = [];
+        renderCatalogPlaceholder('Загрузка...');
+    }
+    try {
+        const data = await apiRequest(`/admin/all-products?skip=${catalogState.skip}&limit=${catalogState.limit}`);
+        catalogState.total = data.total;
+        catalogState.products = append ? [...catalogState.products, ...data.products] : data.products;
+        catalogState.skip += data.products.length;
+        
+        elements.catalogCount.textContent = catalogState.products.length;
+        elements.catalogTotal.textContent = catalogState.total;
+        
+        if (!catalogState.products.length) {
+            renderCatalogPlaceholder('Нет продуктов в базе');
+            return;
+        }
+        
+        elements.catalogBody.innerHTML = catalogState.products
+            .map((p) => `
+                <tr>
+                    <td class="mono">${p.id}</td>
+                    <td>${p.brand}</td>
+                    <td>${p.line}</td>
+                    <td>${p.shade}</td>
+                    <td class="mono">${p.hex || '—'}</td>
+                </tr>
+            `)
+            .join('');
+        
+        elements.loadMoreCatalog.disabled = catalogState.products.length >= catalogState.total;
+    } catch (error) {
+        renderCatalogPlaceholder(error.message || 'Ошибка загрузки');
+    }
+}
+
+function renderCatalogPlaceholder(text) {
+    elements.catalogBody.innerHTML = `<tr><td colspan="5" class="muted">${text}</td></tr>`;
+}
+
 function bindEvents() {
     elements.saveConfigBtn.addEventListener('click', handleSaveConfig);
     elements.refreshStats.addEventListener('click', loadStats);
@@ -309,10 +357,12 @@ function bindEvents() {
     elements.createForm.addEventListener('submit', handleCreateLink);
     elements.refreshUsers.addEventListener('click', loadUsers);
     elements.downloadUsers.addEventListener('click', downloadUsersCsv);
+    elements.refreshCatalog.addEventListener('click', () => loadCatalog(false));
+    elements.loadMoreCatalog.addEventListener('click', () => loadCatalog(true));
 }
 
 async function loadAll() {
-    await Promise.all([loadStats(), loadGaps(), loadLinks(), loadUsers()]);
+    await Promise.all([loadStats(), loadGaps(), loadLinks(), loadUsers(), loadCatalog()]);
 }
 
 function init() {

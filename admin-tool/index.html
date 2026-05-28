@@ -55,6 +55,34 @@
                 </div>
             </section>
 
+            <section class="panel wide" id="catalog-panel">
+                <div class="panel-header">
+                    <div>
+                        <h3>Каталог всех продуктов</h3>
+                        <p class="muted">Полный список продуктов из базы данных.</p>
+                    </div>
+                    <div class="filters">
+                        <span>Показано: <strong id="catalog-count">0</strong> из <strong id="catalog-total">0</strong></span>
+                        <button id="load-more-catalog">Загрузить ещё</button>
+                        <button class="ghost" id="refresh-catalog">Обновить</button>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Бренд</th>
+                            <th>Линейка</th>
+                            <th>Оттенок</th>
+                            <th>Hex</th>
+                        </tr>
+                    </thead>
+                    <tbody id="catalog-body">
+                        <tr><td colspan="5" class="muted">Нет данных</td></tr>
+                    </tbody>
+                </table>
+            </section>
+
             <section class="panel" id="gaps-panel">
                 <div class="panel-header">
                     <h3>Продукты без связок</h3>

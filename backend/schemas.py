@@ -153,6 +153,8 @@ class LinkStatsResponse(BaseModel):
 
 class AdminUserProducts(BaseModel):
     user_id: int
+    undertone: Optional[str] = None
+    skin_type: Optional[str] = None
     total: int
     products: List[ProductResponse]
 

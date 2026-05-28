@@ -126,6 +126,8 @@ async function loadUsers() {
             .map((item) => `
                 <tr>
                     <td class="mono">${item.user_id}</td>
+                    <td>${item.undertone || '—'}</td>
+                    <td>${item.skin_type || '—'}</td>
                     <td>${item.total}</td>
                     <td>
                         <div class="user-products-list">
@@ -141,7 +143,7 @@ async function loadUsers() {
 }
 
 function renderUsersPlaceholder(text) {
-    elements.usersBody.innerHTML = `<tr><td colspan="3" class="muted">${text}</td></tr>`;
+    elements.usersBody.innerHTML = `<tr><td colspan="5" class="muted">${text}</td></tr>`;
 }
 
 async function downloadUsersCsv() {
@@ -152,10 +154,18 @@ async function downloadUsersCsv() {
             alert('Нет данных для экспорта');
             return;
         }
-        const rows = [['user_id', 'product_id', 'brand', 'line', 'shade']];
+        const rows = [['user_id', 'undertone', 'skin_type', 'product_id', 'brand', 'line', 'shade']];
         data.items.forEach((item) => {
             item.products.forEach((p) => {
-                rows.push([item.user_id, p.id, p.brand, p.line, p.shade]);
+                rows.push([
+                    item.user_id,
+                    item.undertone || '',
+                    item.skin_type || '',
+                    p.id,
+                    p.brand,
+                    p.line,
+                    p.shade
+                ]);
             });
         });
         const csv = rows.map((row) => row.map(escapeCsvCell).join(',')).join('\n');

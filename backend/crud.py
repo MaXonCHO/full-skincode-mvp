@@ -233,6 +233,7 @@ def get_user_product_groups(db: Session, limit: int = 50):
     user_ids = [row[0] for row in db.query(UserProduct.user_id).distinct().limit(limit).all()]
     result = []
     for uid in user_ids:
+        user = db.query(User).filter(User.id == uid).first()
         products = (
             db.query(Product)
             .join(UserProduct, UserProduct.product_id == Product.id)
@@ -241,7 +242,16 @@ def get_user_product_groups(db: Session, limit: int = 50):
         )
         result.append({
             "user_id": uid,
+            "undertone": user.undertone if user else None,
+            "skin_type": user.skin_type if user else None,
             "total": len(products),
             "products": products,
         })
     return result
+
+
+def get_all_products_paginated(db: Session, skip: int = 0, limit: int = 100):
+    """Возвращает все продукты из базы с пагинацией для админки."""
+    total = db.query(func.count(Product.id)).scalar() or 0
+    products = db.query(Product).offset(skip).limit(limit).all()
+    return {"total": total, "products": products}

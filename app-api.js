@@ -89,6 +89,7 @@ function onShadeChange() {
 
 // Состояние приложения с интеграцией backend API
 const DEFAULT_PRODUCT_IMAGE = 'Скинкод%20фотки%20сайт/example.png';
+const MIN_PRODUCTS_FOR_MATCH = 2;
 
 if (typeof api === 'undefined') {
     console.error('API объект не найден! Проверьте загрузку api.js');
@@ -715,16 +716,22 @@ function renderProducts() {
 
 // Обновление счетчика продуктов
 function updateProductCount() {
-    elements.productCount.textContent = `Добавлено: ${state.products.length} из ${state.maxProducts}`;
+    const suffix = ` · минимум ${MIN_PRODUCTS_FOR_MATCH}`;
+    elements.productCount.textContent = `Добавлено: ${state.products.length} из ${state.maxProducts}${suffix}`;
 }
 
 // Обновление кнопки поиска
 function updateFindButton() {
-    elements.btnFind.disabled = state.products.length === 0;
+    elements.btnFind.disabled = state.products.length < MIN_PRODUCTS_FOR_MATCH;
 }
 
 // Поиск совпадений (переход к loading)
 async function findMatches() {
+    if (state.products.length < MIN_PRODUCTS_FOR_MATCH) {
+        alert(`Добавь минимум ${MIN_PRODUCTS_FOR_MATCH} тональных средств, чтобы продолжить.`);
+        return;
+    }
+
     goToStep(3);
 
     // Анимация шагов загрузки

@@ -1,6 +1,13 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_, func
-from models import User, Product, UserProduct, Recommendation, ProductCoOccurrence
+from models import (
+    User,
+    Product,
+    UserProduct,
+    Recommendation,
+    ProductCoOccurrence,
+    BlockedCoOccurrence,
+)
 from schemas import UserCreate, ProductCreate, UserProductCreate, CoOccurrenceCreate, CoOccurrenceUpdate
 from typing import List, Optional
 import uuid
@@ -168,8 +175,17 @@ def search_co_occurrences(db: Session, brand: Optional[str] = None, line: Option
     return query.limit(limit).all()
 
 
+def _normalize_pair(product_a_id: int, product_b_id: int):
+    return tuple(sorted([product_a_id, product_b_id]))
+
+
 def create_or_update_co_occurrence(db: Session, payload: CoOccurrenceCreate) -> ProductCoOccurrence:
-    a_id, b_id = sorted([payload.product_a_id, payload.product_b_id])
+    a_id, b_id = _normalize_pair(payload.product_a_id, payload.product_b_id)
+
+    db.query(BlockedCoOccurrence).filter(
+        BlockedCoOccurrence.product_a_id == a_id,
+        BlockedCoOccurrence.product_b_id == b_id
+    ).delete(synchronize_session=False)
     record = db.query(ProductCoOccurrence).filter(
         ProductCoOccurrence.product_a_id == a_id,
         ProductCoOccurrence.product_b_id == b_id
@@ -202,7 +218,15 @@ def delete_co_occurrence(db: Session, co_id: int) -> bool:
     record = db.query(ProductCoOccurrence).filter(ProductCoOccurrence.id == co_id).first()
     if not record:
         return False
+    a_id, b_id = _normalize_pair(record.product_a_id, record.product_b_id)
     db.delete(record)
+    # добавляем пару в блок-лист, чтобы автообновления не возвращали её
+    exists = db.query(BlockedCoOccurrence).filter(
+        BlockedCoOccurrence.product_a_id == a_id,
+        BlockedCoOccurrence.product_b_id == b_id
+    ).first()
+    if not exists:
+        db.add(BlockedCoOccurrence(product_a_id=a_id, product_b_id=b_id))
     db.commit()
     return True
 

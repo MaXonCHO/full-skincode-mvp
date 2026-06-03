@@ -1,6 +1,13 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text, func, or_
-from models import User, Product, UserProduct, ProductCoOccurrence, Recommendation
+from models import (
+    User,
+    Product,
+    UserProduct,
+    ProductCoOccurrence,
+    BlockedCoOccurrence,
+    Recommendation,
+)
 from typing import List, Dict, Optional, Any
 
 
@@ -340,6 +347,10 @@ class RecommendationEngine:
         return 1.0 if product_undertone == user_undertone else 0.0
 
     def update_co_occurrence_matrix(self) -> None:
+        blocked_pairs = {
+            (row.product_a_id, row.product_b_id)
+            for row in self.db.query(BlockedCoOccurrence).all()
+        }
         results = self.db.execute(
             text(
                 """
@@ -357,6 +368,9 @@ class RecommendationEngine:
 
         for row in results:
             product_a_id, product_b_id, count = row
+            pair = tuple(sorted([product_a_id, product_b_id]))
+            if pair in blocked_pairs:
+                continue
             co_occurrence = (
                 self.db.query(ProductCoOccurrence)
                 .filter(

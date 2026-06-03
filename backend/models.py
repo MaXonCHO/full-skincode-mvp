@@ -87,6 +87,20 @@ class ProductCoOccurrence(Base):
     )
 
 
+class BlockedCoOccurrence(Base):
+    """Хранит пары продуктов, которые админ явно запретил предлагать."""
+    __tablename__ = "blocked_co_occurrences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_a_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    product_b_id = Column(Integer, ForeignKey("products.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index('idx_blocked_pair_unique', 'product_a_id', 'product_b_id', unique=True),
+    )
+
+
 class Recommendation(Base):
     """
     Таблица для хранения рекомендаций для пользователей.

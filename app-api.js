@@ -1,12 +1,12 @@
 function handleLineFocus() {
-    if (elements.lineSuggestions && state.lines.length) {
-        renderLineSuggestions(state.lines);
-    }
+    if (!state.selectedBrand) return;
+    const value = elements.lineInput?.value.trim() || '';
+    renderLineSuggestions(filterLineMatches(value));
 }
 
 function handleLineBlur() {
     setTimeout(() => {
-        elements.lineSuggestions?.classList.remove('show');
+        hideLineSuggestions();
     }, 120);
 }
 
@@ -16,10 +16,20 @@ function filterLineMatches(value) {
     return state.lines.filter((line) => line.toLowerCase().includes(lower));
 }
 
-function renderLineSuggestions(lines) {
+function hideLineSuggestions() {
     if (!elements.lineSuggestions) return;
+    elements.lineSuggestions.classList.remove('show');
+    elements.lineSuggestions.innerHTML = '';
+}
+
+function renderLineSuggestions(lines) {
+    if (!elements.lineSuggestions || !state.selectedBrand) {
+        hideLineSuggestions();
+        return;
+    }
+
     if (!lines.length) {
-        elements.lineSuggestions.innerHTML = '<div class="line-suggestion-item" style="cursor:default">Нет линеек</div>';
+        elements.lineSuggestions.innerHTML = '<div class="line-suggestion-item" style="cursor:default">Нет совпадений</div>';
         elements.lineSuggestions.classList.add('show');
         return;
     }
@@ -77,10 +87,7 @@ function resetLineInput(message = 'Сначала выбери бренд') {
     if (elements.lineOptions) {
         elements.lineOptions.innerHTML = '';
     }
-    if (elements.lineSuggestions) {
-        elements.lineSuggestions.innerHTML = '';
-        elements.lineSuggestions.classList.remove('show');
-    }
+    hideLineSuggestions();
 }
 
 function resetShadeInput(message = 'Сначала выбери линейку') {
@@ -138,7 +145,7 @@ function prepareLinesForBrand(brand) {
         elements.lineInput.placeholder = lines.length ? 'Начни вводить линейку' : 'Нет доступных линеек';
     }
 
-    renderLineSuggestions(lines);
+    hideLineSuggestions();
     resetShadeInput(lines.length ? 'Сначала выбери линейку' : 'Нет доступных оттенков');
     updateAddButton();
 }

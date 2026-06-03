@@ -9,6 +9,9 @@ const elements = {
     saveConfigBtn: document.getElementById('save-config'),
     refreshStats: document.getElementById('refresh-stats'),
     refreshGaps: document.getElementById('refresh-gaps'),
+    gapsCount: document.getElementById('gaps-count'),
+    gapsTotal: document.getElementById('gaps-total'),
+    loadMoreGaps: document.getElementById('load-more-gaps'),
     applyFilter: document.getElementById('apply-filter'),
     resetFilter: document.getElementById('reset-filter'),
     filterBrand: document.getElementById('filter-brand'),
@@ -35,7 +38,8 @@ const elements = {
 
 let config = { ...DEFAULT_CONFIG };
 let currentFilter = { brand: '', line: '' };
-let catalogState = { skip: 0, limit: 100, total: 0, products: [] };
+let catalogState = { skip: 0, limit: 50, total: 0, products: [] };
+let gapsState = { skip: 0, limit: 50, total: 0, products: [] };
 
 function updateConfigUI() {
     elements.apiUrlInput.value = config.apiUrl;
@@ -78,26 +82,42 @@ async function loadStats() {
     }
 }
 
-async function loadGaps() {
-    renderPlaceholder(elements.gapsBody, 'Загрузка...');
+async function loadGaps(append = false) {
+    if (!append) {
+        gapsState.skip = 0;
+        gapsState.products = [];
+        renderGapsPlaceholder('Загрузка...');
+    }
     try {
-        const data = await apiRequest('/admin/gaps');
-        if (!data.products.length) {
-            renderPlaceholder(elements.gapsBody, 'Все продукты имеют связки');
+        const data = await apiRequest(`/admin/gaps?skip=${gapsState.skip}&limit=${gapsState.limit}`);
+        gapsState.total = data.total;
+        gapsState.products = append ? [...gapsState.products, ...data.products] : data.products;
+        gapsState.skip += data.products.length;
+
+        elements.gapsCount.textContent = gapsState.products.length;
+        elements.gapsTotal.textContent = gapsState.total;
+
+        if (!gapsState.products.length) {
+            renderGapsPlaceholder('Все продукты уже в связках');
+            elements.loadMoreGaps.disabled = true;
             return;
         }
-        elements.gapsBody.innerHTML = data.products
+
+        elements.gapsBody.innerHTML = gapsState.products
             .map((product) => `
                 <tr>
                     <td class="mono">${product.id}</td>
                     <td>${product.brand}</td>
                     <td>${product.line}</td>
                     <td>${product.shade}</td>
+                    <td class="mono">${product.hex || '—'}</td>
                 </tr>
             `)
             .join('');
+
+        elements.loadMoreGaps.disabled = gapsState.products.length >= gapsState.total;
     } catch (error) {
-        renderPlaceholder(elements.gapsBody, error.message || 'Ошибка загрузки');
+        renderGapsPlaceholder(error.message || 'Ошибка загрузки');
     }
 }
 
@@ -245,6 +265,12 @@ function renderPlaceholder(container, text) {
     container.innerHTML = `<tr><td colspan="5" class="muted">${text}</td></tr>`;
 }
 
+function renderGapsPlaceholder(text) {
+    elements.gapsBody.innerHTML = `<tr><td colspan="5" class="muted">${text}</td></tr>`;
+    elements.gapsCount.textContent = '0';
+    elements.gapsTotal.textContent = gapsState.total ?? 0;
+}
+
 function toggleLoading(node, isLoading) {
     node.classList.toggle('skeleton', isLoading);
 }
@@ -351,7 +377,7 @@ function renderCatalogPlaceholder(text) {
 function bindEvents() {
     elements.saveConfigBtn.addEventListener('click', handleSaveConfig);
     elements.refreshStats.addEventListener('click', loadStats);
-    elements.refreshGaps.addEventListener('click', loadGaps);
+    elements.refreshGaps.addEventListener('click', () => loadGaps(false));
     elements.applyFilter.addEventListener('click', handleFilterSubmit);
     elements.resetFilter.addEventListener('click', handleFilterReset);
     elements.createForm.addEventListener('submit', handleCreateLink);
@@ -359,6 +385,7 @@ function bindEvents() {
     elements.downloadUsers.addEventListener('click', downloadUsersCsv);
     elements.refreshCatalog.addEventListener('click', () => loadCatalog(false));
     elements.loadMoreCatalog.addEventListener('click', () => loadCatalog(true));
+    elements.loadMoreGaps.addEventListener('click', () => loadGaps(true));
 }
 
 async function loadAll() {

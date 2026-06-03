@@ -467,12 +467,12 @@ def admin_delete_link(
 
 @app.get("/admin/gaps", response_model=GapProductsResponse)
 def admin_gap_products(
-    limit: int = Query(100, le=500),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=500),
     db: Session = Depends(get_db),
     _: None = Depends(require_admin_token)
 ):
-    products = get_unlinked_products(db, limit=limit)
-    return GapProductsResponse(total=len(products), products=products)
+    return get_unlinked_products(db, skip=skip, limit=limit)
 
 
 @app.get("/admin/stats", response_model=LinkStatsResponse)
@@ -496,7 +496,7 @@ def admin_user_products(
 @app.get("/admin/all-products", response_model=AllProductsResponse)
 def admin_all_products(
     skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
+    limit: int = Query(50, ge=1, le=1000),
     db: Session = Depends(get_db),
     _: None = Depends(require_admin_token)
 ):

@@ -85,8 +85,15 @@
 
             <section class="panel" id="gaps-panel">
                 <div class="panel-header">
-                    <h3>Продукты без связок</h3>
-                    <button class="ghost" id="refresh-gaps">Обновить</button>
+                    <div>
+                        <h3>Продукты без связок</h3>
+                        <p class="muted">Список оттенков, которые ещё не участвуют в рекомендациях.</p>
+                    </div>
+                    <div class="filters">
+                        <span>Показано: <strong id="gaps-count">0</strong> из <strong id="gaps-total">0</strong></span>
+                        <button id="load-more-gaps">Загрузить ещё</button>
+                        <button class="ghost" id="refresh-gaps">Обновить</button>
+                    </div>
                 </div>
                 <table>
                     <thead>
@@ -95,10 +102,11 @@
                             <th>Бренд</th>
                             <th>Линейка</th>
                             <th>Оттенок</th>
+                            <th>Hex</th>
                         </tr>
                     </thead>
                     <tbody id="gaps-body">
-                        <tr><td colspan="4" class="muted">Нет данных</td></tr>
+                        <tr><td colspan="5" class="muted">Нет данных</td></tr>
                     </tbody>
                 </table>
             </section>

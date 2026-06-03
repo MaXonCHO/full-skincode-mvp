@@ -231,11 +231,14 @@ def delete_co_occurrence(db: Session, co_id: int) -> bool:
     return True
 
 
-def get_unlinked_products(db: Session, limit: int = 100) -> List[Product]:
+def get_unlinked_products(db: Session, skip: int = 0, limit: int = 100):
     linked_ids = db.query(ProductCoOccurrence.product_a_id).union(
         db.query(ProductCoOccurrence.product_b_id)
     ).subquery()
-    return db.query(Product).filter(~Product.id.in_(linked_ids)).limit(limit).all()
+    base_query = db.query(Product).filter(~Product.id.in_(linked_ids)).order_by(Product.id)
+    total = base_query.count()
+    products = base_query.offset(skip).limit(limit).all()
+    return {"total": total, "products": products}
 
 
 def get_link_stats(db: Session):

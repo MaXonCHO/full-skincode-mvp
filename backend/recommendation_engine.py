@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import text, func, or_
+from sqlalchemy import text, func, or_, and_
 from models import (
     User,
     Product,

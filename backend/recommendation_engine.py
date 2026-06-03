@@ -212,8 +212,6 @@ class RecommendationEngine:
             tuple(sorted([row.product_a_id, row.product_b_id]))
             for row in self.db.query(BlockedCoOccurrence).all()
         }
-
-        unblocked_pairs = set()
         links = (
             self.db.query(ProductCoOccurrence)
             .filter(
@@ -232,7 +230,7 @@ class RecommendationEngine:
                 continue
             pair = tuple(sorted([link.product_a_id, link.product_b_id]))
             if pair in blocked_pairs:
-                unblocked_pairs.add(pair)
+                continue
             other_id = link.product_b_id if link.product_a_id in user_product_ids else link.product_a_id
 
             if other_id in user_product_ids:
@@ -250,17 +248,6 @@ class RecommendationEngine:
             data["support"] += 1
             data["weighted_support"] += weight
             data["max_ratio"] = max(data["max_ratio"], 1.0)
-
-        if unblocked_pairs:
-            conditions = [
-                and_(
-                    BlockedCoOccurrence.product_a_id == pair[0],
-                    BlockedCoOccurrence.product_b_id == pair[1],
-                )
-                for pair in unblocked_pairs
-            ]
-            self.db.query(BlockedCoOccurrence).filter(or_(*conditions)).delete(synchronize_session=False)
-            self.db.commit()
 
         return candidates
 

@@ -1,3 +1,63 @@
+function handleLineFocus() {
+    if (elements.lineSuggestions && state.lines.length) {
+        renderLineSuggestions(state.lines);
+    }
+}
+
+function handleLineBlur() {
+    setTimeout(() => {
+        elements.lineSuggestions?.classList.remove('show');
+    }, 120);
+}
+
+function filterLineMatches(value) {
+    if (!value) return state.lines;
+    const lower = value.toLowerCase();
+    return state.lines.filter((line) => line.toLowerCase().includes(lower));
+}
+
+function renderLineSuggestions(lines) {
+    if (!elements.lineSuggestions) return;
+    if (!lines.length) {
+        elements.lineSuggestions.innerHTML = '<div class="line-suggestion-item" style="cursor:default">Нет линеек</div>';
+        elements.lineSuggestions.classList.add('show');
+        return;
+    }
+
+    const firstProductByLine = lines.map((line) => {
+        return state.allProducts.find((p) => p.brand === state.selectedBrand && p.line === line);
+    });
+
+    elements.lineSuggestions.innerHTML = lines
+        .map((line, index) => {
+            const product = firstProductByLine[index];
+            const image = product ? fixProductImage(product.image_url) : DEFAULT_PRODUCT_IMAGE;
+            return `
+                <div class="line-suggestion-item" data-line="${line}">
+                    <img src="${image}" alt="${line}">
+                    <div class="line-suggestion-text">
+                        <strong>${line}</strong>
+                        <span>${state.selectedBrand || ''}</span>
+                    </div>
+                </div>
+            `;
+        })
+        .join('');
+
+    elements.lineSuggestions.classList.add('show');
+
+    elements.lineSuggestions.querySelectorAll('.line-suggestion-item').forEach((item) => {
+        item.addEventListener('mousedown', (event) => {
+            event.preventDefault();
+            const line = item.getAttribute('data-line');
+            if (!line) return;
+            elements.lineInput.value = line;
+            elements.lineSuggestions.classList.remove('show');
+            handleLineInput();
+        });
+    });
+}
+
 // Состояние приложения с интеграцией backend API
 const DEFAULT_PRODUCT_IMAGE = 'Скинкод%20фотки%20сайт/example.png';
 
@@ -16,6 +76,10 @@ function resetLineInput(message = 'Сначала выбери бренд') {
     }
     if (elements.lineOptions) {
         elements.lineOptions.innerHTML = '';
+    }
+    if (elements.lineSuggestions) {
+        elements.lineSuggestions.innerHTML = '';
+        elements.lineSuggestions.classList.remove('show');
     }
 }
 
@@ -74,6 +138,7 @@ function prepareLinesForBrand(brand) {
         elements.lineInput.placeholder = lines.length ? 'Начни вводить линейку' : 'Нет доступных линеек';
     }
 
+    renderLineSuggestions(lines);
     resetShadeInput(lines.length ? 'Сначала выбери линейку' : 'Нет доступных оттенков');
     updateAddButton();
 }
@@ -81,6 +146,7 @@ function prepareLinesForBrand(brand) {
 function handleLineInput() {
     if (!elements.lineInput || !state.selectedBrand) return;
     const rawValue = elements.lineInput.value.trim();
+    renderLineSuggestions(filterLineMatches(rawValue));
     const match = findMatch(rawValue, state.lines);
     if (!match) {
         state.selectedLine = null;
@@ -196,6 +262,7 @@ const elements = {
     brandOptions: document.getElementById('brand-options'),
     lineInput: document.getElementById('line-input'),
     lineOptions: document.getElementById('line-options'),
+    lineSuggestions: document.getElementById('line-suggestions'),
     shadeInput: document.getElementById('shade-input'),
     shadeOptions: document.getElementById('shade-options'),
     brandLoadingHint: document.getElementById('brand-loading-hint'),
@@ -372,7 +439,8 @@ function setupEventListeners() {
     elements.brandInput?.addEventListener('input', handleBrandInput);
     elements.brandInput?.addEventListener('change', handleBrandInput);
     elements.lineInput?.addEventListener('input', handleLineInput);
-    elements.lineInput?.addEventListener('change', handleLineInput);
+    elements.lineInput?.addEventListener('focus', handleLineFocus);
+    elements.lineInput?.addEventListener('blur', handleLineBlur);
     elements.shadeInput?.addEventListener('input', handleShadeInput);
     elements.shadeInput?.addEventListener('change', handleShadeInput);
 

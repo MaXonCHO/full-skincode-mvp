@@ -228,8 +228,11 @@
                         
                         <div class="selector-group">
                             <label>Линейка</label>
-                            <input type="text" id="line-input" class="glass-select input-select" placeholder="Сначала выбери бренд" list="line-options" autocomplete="off" disabled />
-                            <datalist id="line-options"></datalist>
+                            <div class="line-input-wrapper">
+                                <input type="text" id="line-input" class="glass-select input-select" placeholder="Сначала выбери бренд" list="line-options" autocomplete="off" disabled />
+                                <datalist id="line-options"></datalist>
+                                <div class="line-suggestions" id="line-suggestions"></div>
+                            </div>
                         </div>
                         
                         <div class="selector-group">

@@ -1225,6 +1225,26 @@ body::after {
     color: rgba(15, 15, 15, 0.5);
 }
 
+.input-select-wrapper {
+    position: relative;
+}
+
+.input-select-arrow {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 18px;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+}
+
+.input-select-arrow svg {
+    width: 14px;
+    height: 14px;
+    stroke: #4A3F35;
+}
+
 @keyframes selectShimmer {
     from { background-color: rgba(255, 255, 255, 0.45); }
     to { background-color: rgba(255, 255, 255, 0.7); }

@@ -190,6 +190,7 @@ const elements = {
     btnBack2: document.getElementById('btn-back-2'),
     btnBack4: document.getElementById('btn-back-4'),
     brandInput: document.getElementById('brand-input'),
+    brandOptions: document.getElementById('brand-options'),
     lineDropdownBtn: document.getElementById('line-dropdown-btn'),
     lineDropdownList: document.getElementById('line-dropdown-list'),
     lineSelectedText: document.getElementById('line-selected-text'),
@@ -379,6 +380,11 @@ function setupEventListeners() {
 
 // Заполнение списка брендов
 function populateBrandSelect() {
+    if (elements.brandOptions) {
+        elements.brandOptions.innerHTML = state.brands
+            .map((brand) => `<option value="${brand}"></option>`)
+            .join('');
+    }
     updateBrandLoadingUI();
 }
 
@@ -577,7 +583,7 @@ function goToStep(stepNum) {
 function updateAddButton() {
     const hasBrand = !!state.selectedBrand;
     const hasLine = !!state.selectedLine;
-    const shadeId = elements.shadeInput?.dataset.productId;
+    const shadeId = parseInt(elements.shadeSelect?.value || '', 10);
     const canAdd = hasBrand && hasLine && shadeId &&
                    state.products.length < state.maxProducts;
     elements.btnAdd.disabled = !canAdd;
@@ -587,7 +593,7 @@ function updateAddButton() {
 async function addProduct() {
     if (state.products.length >= state.maxProducts) return;
 
-    const productId = parseInt(elements.shadeInput?.dataset.productId || '', 10);
+    const productId = parseInt(elements.shadeSelect?.value || '', 10);
     if (!productId) return;
 
     const product = state.allProducts.find(p => p.id === productId);

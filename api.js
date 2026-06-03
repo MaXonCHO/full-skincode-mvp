@@ -1,10 +1,23 @@
 // API клиент для SkinCode backend
-const API_BASE_URL = (typeof window !== 'undefined' && window.SKINCODE_API_URL)
-    || 'https://full-skincode-mvp-production.up.railway.app';
+function resolveApiBaseUrl() {
+    if (typeof window !== 'undefined' && window.SKINCODE_API_URL) {
+        return window.SKINCODE_API_URL;
+    }
+    if (typeof window !== 'undefined') {
+        const host = window.location.hostname;
+        if (host === 'localhost' || host === '127.0.0.1' || host === '') {
+            return 'http://127.0.0.1:8000';
+        }
+        return `${window.location.origin.replace(/\/$/, '')}/api`;
+    }
+    return 'https://skincode.tech/api';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 class SkinCodeAPI {
     constructor(baseUrl = API_BASE_URL) {
-        this.baseUrl = baseUrl;
+        this.baseUrl = baseUrl.replace(/\/$/, '');
     }
 
     async request(endpoint, options = {}) {
@@ -17,33 +30,52 @@ class SkinCodeAPI {
             ...options
         };
 
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
         try {
-            // Добавляем timeout 10 секунд
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-            
             const response = await fetch(url, {
                 ...config,
                 signal: controller.signal
             });
-            
+
             clearTimeout(timeoutId);
-            
-            if (!response.ok) {
-                throw new Error(`API Error: ${response.status} ${response.statusText}`);
+
+            const contentType = response.headers.get('content-type') || '';
+            let data = null;
+            if (contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                data = text || null;
             }
-            
-            return await response.json();
+
+            if (!response.ok) {
+                let detail = response.statusText;
+                if (data && typeof data === 'object' && data.detail) {
+                    detail = Array.isArray(data.detail)
+                        ? data.detail.map((d) => d.msg || JSON.stringify(d)).join('; ')
+                        : String(data.detail);
+                } else if (typeof data === 'string' && data) {
+                    detail = data;
+                }
+                throw new Error(`API ${response.status}: ${detail}`);
+            }
+
+            return data;
         } catch (error) {
-            console.error('API request failed:', error);
+            console.error('API request failed:', url, error);
             if (error.name === 'AbortError') {
-                throw new Error('API request timeout (10s)');
+                throw new Error('Превышено время ожидания ответа API (15 с)');
+            }
+            if (error.message === 'Failed to fetch') {
+                throw new Error(
+                    `Нет связи с API (${this.baseUrl}). Запусти backend локально или проверь Railway.`
+                );
             }
             throw error;
         }
     }
-
-    // ===== USER ENDPOINTS =====
 
     async createUser(anonymousId = null, undertone = null, skinType = null) {
         return this.request('/users/', {
@@ -64,7 +96,7 @@ class SkinCodeAPI {
         const params = new URLSearchParams();
         if (undertone) params.append('undertone', undertone);
         if (skinType) params.append('skin_type', skinType);
-        
+
         return this.request(`/users/${userId}?${params.toString()}`, {
             method: 'PATCH'
         });
@@ -86,8 +118,6 @@ class SkinCodeAPI {
             method: 'DELETE'
         });
     }
-
-    // ===== PRODUCT ENDPOINTS =====
 
     async getProducts(skip = 0, limit = 100) {
         return this.request(`/products/?skip=${skip}&limit=${limit}`);
@@ -120,8 +150,6 @@ class SkinCodeAPI {
         });
     }
 
-    // ===== RECOMMENDATION ENDPOINTS =====
-
     async getRecommendations(userId, undertone = null, skinType = null, productIds = []) {
         return this.request('/recommendations/', {
             method: 'POST',
@@ -139,5 +167,5 @@ class SkinCodeAPI {
     }
 }
 
-// Создаем глобальный экземпляр API
 const api = new SkinCodeAPI();
+console.log('SkinCode API:', api.baseUrl);

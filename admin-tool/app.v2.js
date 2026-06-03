@@ -1,5 +1,5 @@
 const DEFAULT_CONFIG = {
-    apiUrl: localStorage.getItem('adminApiUrl') || 'http://127.0.0.1:8000',
+    apiUrl: localStorage.getItem('adminApiUrl') || '/api',
     token: localStorage.getItem('adminApiToken') || 'dev-admin-token'
 };
 

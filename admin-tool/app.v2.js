@@ -33,7 +33,9 @@ const elements = {
     catalogCount: document.getElementById('catalog-count'),
     catalogTotal: document.getElementById('catalog-total'),
     refreshCatalog: document.getElementById('refresh-catalog'),
-    loadMoreCatalog: document.getElementById('load-more-catalog')
+    loadMoreCatalog: document.getElementById('load-more-catalog'),
+    wipeUsers: document.getElementById('btn-wipe-users'),
+    wipeLinks: document.getElementById('btn-wipe-links')
 };
 
 let config = { ...DEFAULT_CONFIG };
@@ -386,6 +388,34 @@ function bindEvents() {
     elements.refreshCatalog.addEventListener('click', () => loadCatalog(false));
     elements.loadMoreCatalog.addEventListener('click', () => loadCatalog(true));
     elements.loadMoreGaps.addEventListener('click', () => loadGaps(true));
+    elements.wipeUsers.addEventListener('click', handleWipeUsers);
+    elements.wipeLinks.addEventListener('click', handleWipeLinks);
+}
+
+async function handleWipeUsers() {
+    if (!confirm('Удалить всех пользователей и их продукты? Действие нельзя отменить.')) {
+        return;
+    }
+    try {
+        await apiRequest('/admin/reset/users', { method: 'POST' });
+        await Promise.all([loadUsers(), loadStats(), loadLinks(), loadGaps()]);
+        alert('Пользовательские данные очищены.');
+    } catch (error) {
+        alert(`Не удалось очистить пользователей: ${error.message}`);
+    }
+}
+
+async function handleWipeLinks() {
+    if (!confirm('Очистить все связки? Это действие удалит product_co_occurrences.')) {
+        return;
+    }
+    try {
+        await apiRequest('/admin/reset/links', { method: 'POST' });
+        await Promise.all([loadLinks(), loadStats(), loadGaps()]);
+        alert('Все связки удалены.');
+    } catch (error) {
+        alert(`Не удалось очистить связки: ${error.message}`);
+    }
 }
 
 async function loadAll() {

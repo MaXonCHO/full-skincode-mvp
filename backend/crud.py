@@ -282,3 +282,16 @@ def get_all_products_paginated(db: Session, skip: int = 0, limit: int = 100):
     total = db.query(func.count(Product.id)).scalar() or 0
     products = db.query(Product).offset(skip).limit(limit).all()
     return {"total": total, "products": products}
+
+
+def wipe_user_data(db: Session) -> None:
+    db.query(UserProduct).delete()
+    db.query(Recommendation).delete()
+    db.query(User).delete()
+    db.commit()
+
+
+def wipe_co_occurrence_data(db: Session) -> None:
+    db.query(ProductCoOccurrence).delete()
+    db.query(BlockedCoOccurrence).delete()
+    db.commit()

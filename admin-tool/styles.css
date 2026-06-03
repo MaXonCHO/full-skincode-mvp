@@ -180,6 +180,24 @@ button.ghost {
     border: 1px solid rgba(0, 0, 0, 0.15);
 }
 
+button.danger {
+    background: #b3261e;
+    color: #fff;
+}
+
+button.danger.ghost {
+    background: transparent;
+    color: #b3261e;
+    border-color: rgba(179, 38, 30, 0.3);
+}
+
+.wipe-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 input[type="text"],
 input[type="number"],
 input[type="password"] {

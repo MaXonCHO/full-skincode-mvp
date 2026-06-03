@@ -31,7 +31,7 @@ from crud import (
     add_user_product, get_user_products, delete_user_product, get_user_recommendations,
     list_co_occurrences, search_co_occurrences, create_or_update_co_occurrence,
     update_co_occurrence, delete_co_occurrence, get_unlinked_products, get_link_stats, 
-    get_user_product_groups, get_all_products_paginated
+    get_user_product_groups, get_all_products_paginated, wipe_user_data, wipe_co_occurrence_data
 )
 from recommendation_engine import RecommendationEngine
 from init_db import init_database
@@ -502,6 +502,24 @@ def admin_all_products(
 ):
     """Возвращает все продукты из базы с пагинацией."""
     return get_all_products_paginated(db, skip=skip, limit=limit)
+
+
+@app.post("/admin/reset/users")
+def admin_reset_users(
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_token)
+):
+    wipe_user_data(db)
+    return {"message": "All user data removed"}
+
+
+@app.post("/admin/reset/links")
+def admin_reset_links(
+    db: Session = Depends(get_db),
+    _: None = Depends(require_admin_token)
+):
+    wipe_co_occurrence_data(db)
+    return {"message": "All co-occurrence links removed"}
 
 
 if __name__ == "__main__":

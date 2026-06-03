@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import text, func
+from sqlalchemy import text, func, or_
 from models import User, Product, UserProduct, ProductCoOccurrence, Recommendation
 from typing import List, Dict, Optional, Any
 
@@ -42,6 +42,8 @@ class RecommendationEngine:
 
         # Кандидаты — только продукты из ТЕХ ЖЕ сессий, не входящие в ввод пользователя
         candidates = self._get_candidates_from_sessions(product_ids, session_matches)
+        if not candidates:
+            candidates = self._get_candidates_from_manual_links(product_ids)
         if not candidates:
             return []
 
@@ -190,6 +192,53 @@ class RecommendationEngine:
                 data["max_ratio"] = max(data["max_ratio"], match["match_ratio"])
 
         return result
+
+    def _get_candidates_from_manual_links(
+        self,
+        user_product_ids: List[int],
+    ) -> Dict[int, Dict[str, Any]]:
+        """Fallback: используем вручную заведённые связи из product_co_occurrences."""
+        if not user_product_ids:
+            return {}
+
+        links = (
+            self.db.query(ProductCoOccurrence)
+            .filter(
+                ProductCoOccurrence.co_occurrence_count > 0,
+                or_(
+                    ProductCoOccurrence.product_a_id.in_(user_product_ids),
+                    ProductCoOccurrence.product_b_id.in_(user_product_ids),
+                ),
+            )
+            .all()
+        )
+
+        candidates: Dict[int, Dict[str, Any]] = {}
+        for link in links:
+            if link.product_a_id in user_product_ids and link.product_b_id in user_product_ids:
+                continue
+            if link.product_a_id in user_product_ids:
+                other_id = link.product_b_id
+            else:
+                other_id = link.product_a_id
+
+            if other_id in user_product_ids:
+                continue
+
+            data = candidates.setdefault(
+                other_id,
+                {
+                    "support": 0,
+                    "weighted_support": 0.0,
+                    "max_ratio": 0.0,
+                },
+            )
+            weight = max(1.0, float(link.co_occurrence_count))
+            data["support"] += 1
+            data["weighted_support"] += weight
+            data["max_ratio"] = max(data["max_ratio"], 1.0)
+
+        return candidates
 
     def _score_products(
         self,

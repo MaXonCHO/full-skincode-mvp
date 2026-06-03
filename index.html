@@ -228,17 +228,20 @@
                         
                         <div class="selector-group">
                             <label>Линейка</label>
-                            <div class="line-input-wrapper">
-                                <input type="text" id="line-input" class="glass-select input-select" placeholder="Сначала выбери бренд" list="line-options" autocomplete="off" disabled />
-                                <datalist id="line-options"></datalist>
-                                <div class="line-suggestions" id="line-suggestions"></div>
+                            <div class="native-style-dropdown" id="line-dropdown">
+                                <button type="button" class="native-dropdown-btn" id="line-dropdown-btn" disabled onclick="toggleLineDropdown(); return false;">
+                                    <span class="selected-text" id="line-selected-text">Сначала выбери бренд</span>
+                                    <span class="dropdown-arrow">▼</span>
+                                </button>
+                                <div class="native-dropdown-list" id="line-dropdown-list"></div>
                             </div>
                         </div>
                         
                         <div class="selector-group">
                             <label>Оттенок</label>
-                            <input type="text" id="shade-input" class="glass-select input-select" placeholder="Сначала выбери линейку" list="shade-options" autocomplete="off" disabled />
-                            <datalist id="shade-options"></datalist>
+                            <select id="shade-select" class="glass-select" disabled onchange="onShadeChange()">
+                                <option value="">Сначала выбери линейку</option>
+                            </select>
                         </div>
 
                         <button type="button" class="btn-secondary" id="btn-add" disabled onclick="addProduct(); return false;">

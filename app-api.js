@@ -1,71 +1,90 @@
-function handleLineFocus() {
-    if (!state.selectedBrand) return;
-    const value = elements.lineInput?.value.trim() || '';
-    renderLineSuggestions(filterLineMatches(value));
+function resetLineDropdown(message = 'Сначала выбери бренд') {
+    state.selectedLine = null;
+    if (elements.lineDropdownBtn) {
+        elements.lineDropdownBtn.disabled = true;
+        elements.lineDropdownBtn.classList.remove('open');
+    }
+    if (elements.lineSelectedText) {
+        elements.lineSelectedText.textContent = message;
+    }
+    if (elements.lineDropdownList) {
+        elements.lineDropdownList.innerHTML = '';
+        elements.lineDropdownList.classList.remove('show');
+    }
 }
 
-function handleLineBlur() {
-    setTimeout(() => {
-        hideLineSuggestions();
-    }, 120);
+function resetShadeSelect(message = 'Сначала выбери линейку') {
+    if (elements.shadeSelect) {
+        elements.shadeSelect.disabled = true;
+        elements.shadeSelect.innerHTML = `<option value="">${message}</option>`;
+    }
 }
 
-function filterLineMatches(value) {
-    if (!value) return state.lines;
-    const lower = value.toLowerCase();
-    return state.lines.filter((line) => line.toLowerCase().includes(lower));
-}
+function populateLineDropdown() {
+    if (!elements.lineDropdownBtn || !elements.lineSelectedText || !elements.lineDropdownList) return;
 
-function hideLineSuggestions() {
-    if (!elements.lineSuggestions) return;
-    elements.lineSuggestions.classList.remove('show');
-    elements.lineSuggestions.innerHTML = '';
-}
-
-function renderLineSuggestions(lines) {
-    if (!elements.lineSuggestions || !state.selectedBrand) {
-        hideLineSuggestions();
+    if (!state.selectedBrand) {
+        resetLineDropdown();
+        resetShadeSelect();
         return;
     }
+
+    const brandProducts = state.allProducts.filter((p) => p.brand === state.selectedBrand);
+    const lines = [...new Set(brandProducts.map((p) => p.line))].filter(Boolean).sort();
+    state.lines = lines;
 
     if (!lines.length) {
-        elements.lineSuggestions.innerHTML = '<div class="line-suggestion-item" style="cursor:default">Нет совпадений</div>';
-        elements.lineSuggestions.classList.add('show');
+        resetLineDropdown('Нет доступных линеек');
+        resetShadeSelect('Нет доступных оттенков');
         return;
     }
 
-    const firstProductByLine = lines.map((line) => {
-        return state.allProducts.find((p) => p.brand === state.selectedBrand && p.line === line);
+    elements.lineDropdownBtn.disabled = false;
+    elements.lineSelectedText.textContent = 'Выбери линейку';
+    elements.lineDropdownList.innerHTML = '';
+
+    lines.forEach((line) => {
+        const lineProducts = brandProducts.filter((p) => p.line === line);
+        const firstShade = lineProducts[0];
+        const image = firstShade ? firstShade.image_url : '';
+
+        const item = document.createElement('div');
+        item.className = 'native-dropdown-item';
+        item.onclick = () => selectLine(line);
+        item.innerHTML = `<img src="${fixProductImage(image)}" alt="" style="width:28px;height:36px;object-fit:contain;"><span>${line}</span>`;
+        elements.lineDropdownList.appendChild(item);
     });
+}
 
-    elements.lineSuggestions.innerHTML = lines
-        .map((line, index) => {
-            const product = firstProductByLine[index];
-            const image = product ? fixProductImage(product.image_url) : DEFAULT_PRODUCT_IMAGE;
-            return `
-                <div class="line-suggestion-item" data-line="${line}">
-                    <img src="${image}" alt="${line}">
-                    <div class="line-suggestion-text">
-                        <strong>${line}</strong>
-                        <span>${state.selectedBrand || ''}</span>
-                    </div>
-                </div>
-            `;
-        })
-        .join('');
+function toggleLineDropdown() {
+    if (!elements.lineDropdownBtn || !elements.lineDropdownList || elements.lineDropdownBtn.disabled) return;
+    elements.lineDropdownList.classList.toggle('show');
+    elements.lineDropdownBtn.classList.toggle('open');
+}
 
-    elements.lineSuggestions.classList.add('show');
+function selectLine(line) {
+    state.selectedLine = line;
+    if (elements.lineSelectedText) {
+        elements.lineSelectedText.textContent = line;
+    }
+    if (elements.lineDropdownList) elements.lineDropdownList.classList.remove('show');
+    if (elements.lineDropdownBtn) elements.lineDropdownBtn.classList.remove('open');
 
-    elements.lineSuggestions.querySelectorAll('.line-suggestion-item').forEach((item) => {
-        item.addEventListener('mousedown', (event) => {
-            event.preventDefault();
-            const line = item.getAttribute('data-line');
-            if (!line) return;
-            elements.lineInput.value = line;
-            elements.lineSuggestions.classList.remove('show');
-            handleLineInput();
-        });
-    });
+    const lineProducts = state.allProducts.filter(
+        (p) => p.brand === state.selectedBrand && p.line === line
+    );
+
+    if (elements.shadeSelect) {
+        elements.shadeSelect.disabled = !lineProducts.length;
+        elements.shadeSelect.innerHTML = '<option value="">Выбери оттенок</option>' +
+            lineProducts.map((p) => `<option value="${p.id}">${p.shade}</option>`).join('');
+    }
+
+    updateAddButton();
+}
+
+function onShadeChange() {
+    updateAddButton();
 }
 
 // Состояние приложения с интеграцией backend API
@@ -78,29 +97,13 @@ if (typeof api === 'undefined') {
 function resetLineInput(message = 'Сначала выбери бренд') {
     state.selectedLine = null;
     state.lines = [];
-    if (elements.lineInput) {
-        elements.lineInput.value = '';
-        elements.lineInput.disabled = true;
-        elements.lineInput.placeholder = message;
-        delete elements.lineInput.dataset.selected;
-    }
-    if (elements.lineOptions) {
-        elements.lineOptions.innerHTML = '';
-    }
-    hideLineSuggestions();
+    resetLineDropdown(message);
+    resetShadeSelect('Сначала выбери линейку');
 }
 
 function resetShadeInput(message = 'Сначала выбери линейку') {
     state.currentLineProducts = [];
-    if (elements.shadeInput) {
-        elements.shadeInput.value = '';
-        elements.shadeInput.disabled = true;
-        elements.shadeInput.placeholder = message;
-        delete elements.shadeInput.dataset.productId;
-    }
-    if (elements.shadeOptions) {
-        elements.shadeOptions.innerHTML = '';
-    }
+    resetShadeSelect(message);
 }
 
 function findMatch(value, list) {
@@ -126,87 +129,8 @@ function handleBrandInput() {
         state.selectedBrand = match;
         elements.brandInput.value = match;
         elements.brandInput.dataset.selected = match;
-        prepareLinesForBrand(match);
+        populateLineDropdown();
     }
-}
-
-function prepareLinesForBrand(brand) {
-    const brandProducts = state.allProducts.filter((p) => p.brand === brand);
-    const lines = [...new Set(brandProducts.map((p) => p.line))].sort();
-    state.lines = lines;
-
-    if (elements.lineOptions) {
-        elements.lineOptions.innerHTML = lines.map((line) => `<option value="${line}"></option>`).join('');
-    }
-
-    if (elements.lineInput) {
-        elements.lineInput.disabled = !lines.length;
-        elements.lineInput.value = '';
-        elements.lineInput.placeholder = lines.length ? 'Начни вводить линейку' : 'Нет доступных линеек';
-    }
-
-    hideLineSuggestions();
-    resetShadeInput(lines.length ? 'Сначала выбери линейку' : 'Нет доступных оттенков');
-    updateAddButton();
-}
-
-function handleLineInput() {
-    if (!elements.lineInput || !state.selectedBrand) return;
-    const rawValue = elements.lineInput.value.trim();
-    renderLineSuggestions(filterLineMatches(rawValue));
-    const match = findMatch(rawValue, state.lines);
-    if (!match) {
-        state.selectedLine = null;
-        resetShadeInput(state.lines.length ? 'Выбери линейку из списка' : 'Сначала выбери бренд');
-        updateAddButton();
-        return;
-    }
-
-    if (state.selectedLine !== match) {
-        state.selectedLine = match;
-        elements.lineInput.value = match;
-        elements.lineInput.dataset.selected = match;
-        populateShadeOptions();
-    }
-}
-
-function populateShadeOptions() {
-    if (!state.selectedBrand || !state.selectedLine) return;
-    const lineProducts = state.allProducts.filter(
-        (p) => p.brand === state.selectedBrand && p.line === state.selectedLine
-    );
-    state.currentLineProducts = lineProducts;
-
-    if (elements.shadeOptions) {
-        elements.shadeOptions.innerHTML = lineProducts
-            .map((product) => `<option value="${product.shade}"></option>`)
-            .join('');
-    }
-
-    if (elements.shadeInput) {
-        elements.shadeInput.disabled = !lineProducts.length;
-        elements.shadeInput.value = '';
-        elements.shadeInput.placeholder = lineProducts.length ? 'Начни вводить оттенок' : 'Нет оттенков';
-        delete elements.shadeInput.dataset.productId;
-    }
-
-    updateAddButton();
-}
-
-function handleShadeInput() {
-    if (!elements.shadeInput) return;
-    const match = state.currentLineProducts.find(
-        (product) => product.shade.toLowerCase() === elements.shadeInput.value.trim().toLowerCase()
-    );
-
-    if (match) {
-        elements.shadeInput.value = match.shade;
-        elements.shadeInput.dataset.productId = match.id;
-    } else {
-        delete elements.shadeInput.dataset.productId;
-    }
-
-    updateAddButton();
 }
 
 function fixProductImage() {
@@ -266,12 +190,10 @@ const elements = {
     btnBack2: document.getElementById('btn-back-2'),
     btnBack4: document.getElementById('btn-back-4'),
     brandInput: document.getElementById('brand-input'),
-    brandOptions: document.getElementById('brand-options'),
-    lineInput: document.getElementById('line-input'),
-    lineOptions: document.getElementById('line-options'),
-    lineSuggestions: document.getElementById('line-suggestions'),
-    shadeInput: document.getElementById('shade-input'),
-    shadeOptions: document.getElementById('shade-options'),
+    lineDropdownBtn: document.getElementById('line-dropdown-btn'),
+    lineDropdownList: document.getElementById('line-dropdown-list'),
+    lineSelectedText: document.getElementById('line-selected-text'),
+    shadeSelect: document.getElementById('shade-select'),
     brandLoadingHint: document.getElementById('brand-loading-hint'),
     btnAdd: document.getElementById('btn-add'),
     btnFind: document.getElementById('btn-find'),
@@ -445,11 +367,6 @@ function setupEventListeners() {
     // Поиск брендов/линеек/оттенков
     elements.brandInput?.addEventListener('input', handleBrandInput);
     elements.brandInput?.addEventListener('change', handleBrandInput);
-    elements.lineInput?.addEventListener('input', handleLineInput);
-    elements.lineInput?.addEventListener('focus', handleLineFocus);
-    elements.lineInput?.addEventListener('blur', handleLineBlur);
-    elements.shadeInput?.addEventListener('input', handleShadeInput);
-    elements.shadeInput?.addEventListener('change', handleShadeInput);
 
     // Этап 4: скачать подборку
     if (elements.btnDownload) elements.btnDownload.addEventListener('click', downloadRecommendations);
@@ -462,18 +379,6 @@ function setupEventListeners() {
 
 // Заполнение списка брендов
 function populateBrandSelect() {
-    if (!elements.brandOptions) return;
-    if (!state.brands.length) {
-        updateBrandLoadingUI();
-        return;
-    }
-
-    elements.brandOptions.innerHTML = state.brands
-        .map((brand) => `<option value="${brand}"></option>`)
-        .join('');
-    if (elements.brandInput) {
-        elements.brandInput.value = '';
-    }
     updateBrandLoadingUI();
 }
 
@@ -1020,6 +925,9 @@ window.goToStep = goToStep;
 window.findMatches = findMatches;
 window.addProduct = addProduct;
 window.removeProduct = removeProduct;
+window.toggleLineDropdown = toggleLineDropdown;
+window.selectLine = selectLine;
+window.onShadeChange = onShadeChange;
 window.showHelpModal = showHelpModal;
 window.closeHelpModal = closeHelpModal;
 window.downloadRecommendations = downloadRecommendations;
